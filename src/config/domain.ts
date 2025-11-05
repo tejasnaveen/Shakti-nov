@@ -12,24 +12,6 @@ export const extractBaseDomain = (hostname: string): string => {
     return cachedBaseDomain;
   }
 
-  if (hostnameWithoutPort.includes('.local-credentialless.webcontainer-api.io')) {
-    const fullDomain = hostnameWithoutPort;
-    const parts = fullDomain.split('.');
-    if (parts.length >= 2) {
-      const domainSuffix = parts.slice(1).join('.');
-      cachedBaseDomain = domainSuffix;
-      return cachedBaseDomain;
-    }
-  }
-
-  if (hostnameWithoutPort.includes('webcontainer-api.io')) {
-    const match = hostnameWithoutPort.match(/([^.]+\.webcontainer-api\.io)$/);
-    if (match) {
-      cachedBaseDomain = match[1];
-      return cachedBaseDomain;
-    }
-  }
-
   const parts = hostnameWithoutPort.split('.');
   if (parts.length >= 2) {
     cachedBaseDomain = parts.slice(-2).join('.');
@@ -59,38 +41,15 @@ export const getDomainConfig = () => {
     currentProtocol,
     currentHost,
     getFullSubdomainUrl: (subdomain: string) => {
-      if (currentHost.includes('webcontainer-api.io')) {
-        const fullHost = currentHost.split(':')[0];
-        const match = fullHost.match(/^([^-]+)-(.+)$/);
-        if (match) {
-          const [, , suffix] = match;
-          return `${currentProtocol}//${subdomain}-${suffix}`;
-        }
-        return `${currentProtocol}//${subdomain}.${baseDomain}`;
-      }
-
-      if (currentHost.includes('localhost')) {
-        const port = currentHost.split(':')[1];
-        return port ? `${currentProtocol}//${subdomain}.localhost:${port}` : `${currentProtocol}//${subdomain}.localhost`;
-      }
-
-      return `${currentProtocol}//${subdomain}.${baseDomain}`;
+      // Use path-based routing for temp domains
+      return `${currentProtocol}//${currentHost}/tenant/${subdomain}`;
     },
     getLoginUrl: (subdomain: string) => {
-      const baseUrl = getDomainConfig().getFullSubdomainUrl(subdomain);
-      return `${baseUrl}/login`;
+      return `${currentProtocol}//${currentHost}/tenant/${subdomain}/login`;
     },
     getDisplayDomain: (subdomain?: string) => {
       if (subdomain) {
-        if (currentHost.includes('webcontainer-api.io')) {
-          const fullHost = currentHost.split(':')[0];
-          const match = fullHost.match(/^([^-]+)-(.+)$/);
-          if (match) {
-            const [, , suffix] = match;
-            return `${subdomain}-${suffix}`;
-          }
-        }
-        return `${subdomain}.${baseDomain}`;
+        return `${currentHost}/tenant/${subdomain}`;
       }
       return baseDomain;
     }

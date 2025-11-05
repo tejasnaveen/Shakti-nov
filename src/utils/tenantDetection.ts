@@ -1,70 +1,28 @@
 import { Tenant } from '../types/tenant';
 import { supabase } from '../lib/supabase';
 
-const parseWebContainerURL = (hostname: string): string => {
-  const pattern = /^([a-z0-9]+)(?:-[a-z0-9]+)?--\d+--[a-z0-9]+\.local-credentialless\.webcontainer-api\.io$/i;
-  const match = hostname.match(pattern);
-
-  if (match && match[1]) {
-    console.log('[Tenant Detection] WebContainer URL detected:', hostname);
-    console.log('[Tenant Detection] Extracted subdomain:', match[1]);
-    return match[1];
-  }
-
-  const fallbackPattern = /^([a-z0-9]+)/i;
-  const fallbackMatch = hostname.match(fallbackPattern);
-
-  if (fallbackMatch && fallbackMatch[1]) {
-    console.log('[Tenant Detection] Using fallback extraction for:', hostname);
-    console.log('[Tenant Detection] Extracted subdomain:', fallbackMatch[1]);
-    return fallbackMatch[1];
-  }
-
-  console.log('[Tenant Detection] Failed to extract subdomain from WebContainer URL:', hostname);
-  return '';
-};
-
 export const extractSubdomain = (hostname: string): string => {
   const hostnameWithoutPort = hostname.split(':')[0];
   console.log('[Tenant Detection] Processing hostname:', hostnameWithoutPort);
-  console.log('[Tenant Detection] Full hostname:', hostname);
 
-  // Handle localhost subdomains like yanaviaa.localhost or yanavi.localhost
+  // Check URL path for tenant identifier (e.g., /tenant/yanavi)
+  const pathTenant = window.location.pathname.match(/^\/tenant\/([a-z0-9-]+)/i);
+  if (pathTenant && pathTenant[1]) {
+    console.log('[Tenant Detection] Path-based tenant detected:', pathTenant[1]);
+    return pathTenant[1];
+  }
+
+  // Handle subdomain.localhost format (e.g., yanavi.localhost)
   if (hostnameWithoutPort.includes('localhost')) {
     const parts = hostnameWithoutPort.split('.');
-    console.log('[Tenant Detection] Localhost parts:', parts);
-
-    // Handle subdomain.localhost format (e.g., yanaviaa.localhost)
     if (parts.length === 2 && parts[1] === 'localhost' && parts[0] !== 'localhost') {
       console.log('[Tenant Detection] Localhost subdomain detected:', parts[0]);
       return parts[0];
     }
-
-    // Handle localhost with port (e.g., localhost:3000)
-    if (parts.length === 1 && parts[0] === 'localhost') {
-      console.log('[Tenant Detection] Main localhost domain, no subdomain');
-      return '';
-    }
-
-    // Handle cases where port is included in the split (e.g., yanaviaa.localhost:3000)
-    if (parts.length === 3 && parts[1] === 'localhost' && parts[0] !== 'localhost') {
-      console.log('[Tenant Detection] Localhost subdomain with port detected:', parts[0]);
-      return parts[0];
-    }
-
-    console.log('[Tenant Detection] No valid localhost subdomain pattern found');
     return '';
   }
 
-  if (hostnameWithoutPort.includes('.local-credentialless.webcontainer-api.io')) {
-    return parseWebContainerURL(hostnameWithoutPort);
-  }
-
-  if (hostnameWithoutPort.includes('webcontainer')) {
-    console.log('[Tenant Detection] Generic webcontainer URL, no subdomain');
-    return '';
-  }
-
+  // Handle standard subdomains (e.g., yanavi.example.com)
   const parts = hostnameWithoutPort.split('.');
   if (parts.length > 2) {
     console.log('[Tenant Detection] Standard subdomain detected:', parts[0]);
