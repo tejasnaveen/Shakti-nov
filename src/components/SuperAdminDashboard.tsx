@@ -634,7 +634,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ user, onLogou
         {/* Tenants Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {tenants.map((tenant) => (
-            <div key={user.tenantId} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div key={tenant.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center">
                   <div className={`w-3 h-3 rounded-full mr-3 ${
