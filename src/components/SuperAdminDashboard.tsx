@@ -194,7 +194,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ user, onLogou
   const [viewingTenant, setViewingTenant] = useState<Tenant | null>(null);
 
   // Set dynamic page title and meta tags
-  usePageConfig('superadmin', getRoleBasedTitle(user?.role, tenant?.name));
+  usePageConfig('superadmin', getRoleBasedTitle(user?.role, viewingTenant?.name));
 
   // Admin management state
   const [tenantAdmins, setTenantAdmins] = useState<CompanyAdmin[]>([]);
