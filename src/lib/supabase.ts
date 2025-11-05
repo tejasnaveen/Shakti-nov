@@ -15,11 +15,11 @@ const mockSupabaseClient = {
 };
 
 let supabase: SupabaseClient;
-if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === 'http://157.173.218.112:8000' && supabaseAnonKey.startsWith('eyJ')) {
+if (supabaseUrl && supabaseAnonKey) {
   console.log('Using real Supabase client');
   supabase = createClient(supabaseUrl, supabaseAnonKey);
 } else {
-  console.warn('Using mock Supabase client for development');
+  console.warn('Using mock Supabase client - missing credentials');
   supabase = mockSupabaseClient as any;
 }
 
