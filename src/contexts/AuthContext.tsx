@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { loginSuperAdmin, loginCompanyAdmin } from '../services/authService';
-import { getTenantBySubdomain, extractSubdomain } from '../utils/tenantDetection';
 
 interface User {
   id: string;
@@ -52,25 +51,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return;
       }
 
-      const hostname = window.location.hostname;
-      const subdomain = extractSubdomain(hostname);
-
-      if (!subdomain) {
-        throw new Error('Please access from your company subdomain (e.g., maryse.localhost:3002)');
-      }
-
-      const tenant = await getTenantBySubdomain(subdomain);
-      if (!tenant) {
-        throw new Error('Company not found. Please check your subdomain.');
-      }
-
-      if (tenant.status !== 'active') {
-        throw new Error('This company account is currently inactive. Please contact support.');
-      }
-
-      // Unified login for all tenant roles (CompanyAdmin, TeamIncharge, Telecaller)
       if (role === 'CompanyAdmin' || role === 'TeamIncharge' || role === 'Telecaller') {
-        const authenticatedUser = await loginCompanyAdmin({ username, password }, tenant.id);
+        const authenticatedUser = await loginCompanyAdmin({ username, password }, null);
         const userData = {
           id: authenticatedUser.id,
           name: authenticatedUser.name || authenticatedUser.username,

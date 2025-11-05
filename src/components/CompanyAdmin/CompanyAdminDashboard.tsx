@@ -2,7 +2,6 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useProducts } from '../../hooks/useProducts';
 import { useEmployees } from '../../hooks/useEmployees';
 import { useModal } from '../../hooks/useModal';
-import { useTenant } from '../../contexts/TenantContext';
 import { Modal } from '../shared/Modal';
 import { employeeService } from '../../services/employeeService';
 import { BulkUploadModal } from './forms/BulkUploadModal';
@@ -34,7 +33,6 @@ interface CompanyAdminDashboardProps {
 
 export const CompanyAdminDashboard: React.FC<CompanyAdminDashboardProps> = ({ user, onLogout }) => {
   const [activeSection, setActiveSection] = useState('dashboard');
-  const { tenant, isLoading: tenantLoading, error: tenantError } = useTenant();
 
   // Custom hooks for state management
   const {

@@ -5,7 +5,6 @@ import { customerCaseService } from '../../../services/customerCaseService';
 import { excelUtils } from '../../../utils/excelUtils';
 import { useNotification, notificationHelpers } from '../../shared/Notification';
 import { useAuth } from '../../../contexts/AuthContext';
-import { useTenant } from '../../../contexts/TenantContext';
 import { TeamService } from '../../../services/teamService';
 
 interface UploadCasesModalProps {
@@ -20,7 +19,6 @@ export const UploadCasesModal: React.FC<UploadCasesModalProps> = ({
   onSuccess 
 }) => {
   const { user } = useAuth();
-  const { tenant } = useTenant();
   const { showNotification } = useNotification();
 
   // Step states
@@ -51,12 +49,12 @@ export const UploadCasesModal: React.FC<UploadCasesModalProps> = ({
       setIsLoading(true);
       
       // Get unique products from column configurations
-      const configs = await columnConfigService.getColumnConfigurations(tenant!.id);
+      const configs = await columnConfigService.getColumnConfigurations(user.id);
       const uniqueProducts = [...new Set(configs.map(c => c.product_name))];
       setProducts(uniqueProducts);
 
       // Get teams for this team incharge
-      const teamData = await TeamService.getTeams(tenant!.id);
+      const teamData = await TeamService.getTeams(user.id);
       const userTeams = teamData.filter((team: any) => 
         team.team_incharge_id === user?.id && team.status === 'active'
       );
@@ -77,7 +75,7 @@ export const UploadCasesModal: React.FC<UploadCasesModalProps> = ({
     setSelectedTeam('');
     
     try {
-      const configs = await columnConfigService.getActiveColumnConfigurations(tenant!.id, product);
+      const configs = await columnConfigService.getActiveColumnConfigurations(user.id, product);
       setColumnConfigs(configs);
     } catch (error) {
       console.error('Error loading column configurations:', error);
@@ -147,7 +145,7 @@ export const UploadCasesModal: React.FC<UploadCasesModalProps> = ({
 
       // Prepare cases for bulk insert
       const cases = excelData.map(row => ({
-        tenant_id: tenant.id,
+        tenant_id: user.tenantId,
         team_id: selectedTeam,
         product_name: selectedProduct,
         case_data: row,

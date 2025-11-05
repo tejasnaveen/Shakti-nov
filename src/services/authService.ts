@@ -52,17 +52,15 @@ export const loginSuperAdmin = async (credentials: LoginCredentials): Promise<Au
   };
 };
 
-export const loginCompanyAdmin = async (credentials: LoginCredentials, tenantId: string): Promise<AuthenticatedUser> => {
+export const loginCompanyAdmin = async (credentials: LoginCredentials, tenantId: string | null): Promise<AuthenticatedUser> => {
   const { username, password } = credentials;
 
-  console.log('Attempting CompanyAdmin login with identifier:', username, 'tenantId:', tenantId);
+  console.log('Attempting login with identifier:', username);
 
-  // First check company_admins table by employee_id
   const { data: adminData, error: adminError } = await supabase
     .from('company_admins')
     .select('id, employee_id, name, email, password_hash, tenant_id')
     .eq('employee_id', username)
-    .eq('tenant_id', tenantId)
     .maybeSingle();
 
   console.log('Company admin query result:', { adminData, adminError });
@@ -90,23 +88,16 @@ export const loginCompanyAdmin = async (credentials: LoginCredentials, tenantId:
     };
   }
 
-  // If not found in company_admins, check employees table for TeamIncharge/Telecaller
   const { data: employeeData, error: employeeError } = await supabase
     .from('employees')
     .select('id, name, emp_id, mobile, password_hash, role, tenant_id, status')
-    .eq('tenant_id', tenantId)
     .eq('emp_id', username)
     .maybeSingle();
 
   console.log('Employee query result:', { employeeData, employeeError });
 
   if (employeeError) {
-    console.error('Employee query error:', {
-      error: employeeError,
-      tenantId: tenantId,
-      username: username,
-      query: 'employees query failed'
-    });
+    console.error('Employee query error:', employeeError);
     throw new Error('Authentication failed');
   }
 
@@ -132,7 +123,6 @@ export const loginCompanyAdmin = async (credentials: LoginCredentials, tenantId:
     };
   }
 
-  // If not found in either table
   console.log('No user found with identifier:', username);
   throw new Error('Invalid credentials');
 };

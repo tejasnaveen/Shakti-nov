@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Users, CheckCircle } from 'lucide-react';
 import { Modal } from '../shared/Modal';
 import { TeamService } from '../../services/teamService';
-import { useTenant } from '../../contexts/TenantContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTeams } from '../../hooks/useTeams';
 import { useProducts } from '../../hooks/useProducts';
@@ -15,7 +14,6 @@ interface CreateTeamProps {
 }
 
 export const CreateTeam: React.FC<CreateTeamProps> = ({ isOpen, onClose, onTeamCreated }) => {
-  const { tenant } = useTenant();
   const { user } = useAuth();
   const { createTeam } = useTeams(tenant?.id);
   const { products } = useProducts();
@@ -37,7 +35,7 @@ export const CreateTeam: React.FC<CreateTeamProps> = ({ isOpen, onClose, onTeamC
     
     try {
       setIsLoading(true);
-      const telecallerList = await TeamService.getAvailableTelecallers(tenant.id);
+      const telecallerList = await TeamService.getAvailableTelecallers(user.tenantId);
       setTelecallers(telecallerList);
     } catch (error) {
       console.error('Error loading telecallers:', error);

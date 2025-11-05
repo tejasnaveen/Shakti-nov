@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { FileText, Phone, Eye, Copy, Users, X } from 'lucide-react';
 import { customerCaseService, CustomerCase } from '../../../services/customerCaseService';
 import { TeamService } from '../../../services/teamService';
-import { useTenant } from '../../../contexts/TenantContext';
 import { useNotification, notificationHelpers } from '../../shared/Notification';
 
 interface Team {
@@ -30,7 +29,6 @@ export const CasesView: React.FC<CasesViewProps> = ({ user }) => {
   const [selectedCase, setSelectedCase] = useState<CustomerCase | null>(null);
   const [showCaseDetails, setShowCaseDetails] = useState(false);
   
-  const { tenant } = useTenant();
   const { showNotification } = useNotification();
 
   // Load customer cases and teams for this telecaller
@@ -45,7 +43,7 @@ export const CasesView: React.FC<CasesViewProps> = ({ user }) => {
     try {
       setIsLoading(true);
       // Use the user's empId to fetch cases assigned to this telecaller
-      const cases = await customerCaseService.getCasesByTelecaller(tenant!.id, user!.empId);
+      const cases = await customerCaseService.getCasesByTelecaller(user.id, user!.empId);
       setAllCases(cases);
       setCustomerCases(cases); // Initially show all cases
     } catch (error) {
@@ -62,7 +60,7 @@ export const CasesView: React.FC<CasesViewProps> = ({ user }) => {
   const loadAvailableTeams = async () => {
     try {
       // Get teams where this user is a telecaller by matching EMPID
-      const teams = await TeamService.getTeams(tenant!.id);
+      const teams = await TeamService.getTeams(user.id);
       const userTeams = teams.filter(team =>
         team.telecallers?.some(tel => tel.emp_id === user.empId)
       );

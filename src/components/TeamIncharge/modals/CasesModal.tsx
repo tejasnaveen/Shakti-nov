@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { FileText, Phone, DollarSign, AlertCircle, Eye, Copy, Users, X } from 'lucide-react';
 import { customerCaseService } from '../../../services/customerCaseService';
 import { TeamService } from '../../../services/teamService';
-import { useTenant } from '../../../contexts/TenantContext';
 import { useNotification, notificationHelpers } from '../../shared/Notification';
 
 interface CasesModalProps {
@@ -19,7 +18,6 @@ export const CasesModal: React.FC<CasesModalProps> = ({ isOpen, onClose, user })
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
-  const { tenant } = useTenant();
   const { showNotification } = useNotification();
 
   // Load customer cases and teams for this telecaller
@@ -33,7 +31,7 @@ export const CasesModal: React.FC<CasesModalProps> = ({ isOpen, onClose, user })
   const loadCustomerCases = async () => {
     try {
       setIsLoading(true);
-      const cases = await customerCaseService.getCasesByTelecaller(tenant!.id, user!.empId);
+      const cases = await customerCaseService.getCasesByTelecaller(user.id, user!.empId);
       setAllCases(cases);
       setCustomerCases(cases); // Initially show all cases
     } catch (error) {
@@ -50,7 +48,7 @@ export const CasesModal: React.FC<CasesModalProps> = ({ isOpen, onClose, user })
   const loadAvailableTeams = async () => {
     try {
       // Get teams where this user is a telecaller
-      const teams = await TeamService.getTeams(tenant!.id);
+      const teams = await TeamService.getTeams(user.id);
       const userTeams = teams.filter(team => 
         team.telecallers?.some(tel => tel.emp_id === user?.empId)
       );

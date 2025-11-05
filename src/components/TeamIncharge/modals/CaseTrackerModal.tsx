@@ -8,7 +8,6 @@ import { columnConfigService } from '../../../services/columnConfigService';
 import type { ColumnConfiguration } from '../../../services/columnConfigService';
 import { useNotification, notificationHelpers } from '../../shared/Notification';
 import { useAuth } from '../../../contexts/AuthContext';
-import { useTenant } from '../../../contexts/TenantContext';
 import type { TeamInchargeCase, CaseFilters } from '../../../types/caseManagement';
 import { PromptModal } from '../../shared/PromptModal';
 
@@ -35,7 +34,6 @@ export const CaseTrackerModal: React.FC<CaseTrackerModalProps> = ({
   telecallerCounts = []
 }) => {
   const { user } = useAuth();
-  const { tenant } = useTenant();
   const { showNotification } = useNotification();
 
   const [activeView, setActiveView] = useState('overview');
@@ -87,7 +85,7 @@ export const CaseTrackerModal: React.FC<CaseTrackerModalProps> = ({
       setIsLoading(true);
       
       // Load teams for this team incharge
-      const teamData = await TeamService.getTeams(tenant!.id);
+      const teamData = await TeamService.getTeams(user.id);
       const userTeams = teamData.filter((team: any) => 
         team.team_incharge_id === user?.id && team.status === 'active'
       );
@@ -101,7 +99,7 @@ export const CaseTrackerModal: React.FC<CaseTrackerModalProps> = ({
         setTelecallers(telecallerList);
 
         // Load products from column configurations
-        const configs = await columnConfigService.getColumnConfigurations(tenant!.id);
+        const configs = await columnConfigService.getColumnConfigurations(user.id);
         const uniqueProducts = [...new Set(configs.map(c => c.product_name))];
         setProducts(uniqueProducts);
       }
@@ -131,7 +129,7 @@ export const CaseTrackerModal: React.FC<CaseTrackerModalProps> = ({
       };
 
       const teamCases = await customerCaseService.getCasesByFilters(
-        tenant.id,
+        user.tenantId,
         selectedTeam,
         filters
       );
@@ -220,7 +218,7 @@ export const CaseTrackerModal: React.FC<CaseTrackerModalProps> = ({
     try {
       // Get column configurations for the selected product
       if (selectedProduct) {
-        columnConfigService.getActiveColumnConfigurations(tenant!.id, selectedProduct)
+        columnConfigService.getActiveColumnConfigurations(user.id, selectedProduct)
           .then(configs => {
             excelUtils.exportCasesToExcel(
               filteredCases.map(case_ => ({ 
@@ -313,7 +311,7 @@ export const CaseTrackerModal: React.FC<CaseTrackerModalProps> = ({
       };
 
       const telecallerCasesData = await customerCaseService.getCasesByFilters(
-        tenant.id,
+        user.tenantId,
         selectedTeam,
         telecallerFilters
       );

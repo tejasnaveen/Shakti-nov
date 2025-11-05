@@ -1,38 +1,31 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { User, Users, Phone, Zap, Shield, TrendingUp, AlertCircle } from 'lucide-react';
+import { User, Users, Phone, Zap, Shield, TrendingUp } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useTenant } from '../contexts/TenantContext';
 import { usePageConfig, getRoleBasedTitle } from '../utils/pageUtils';
 
 const LoginPage: React.FC = () => {
   const { login, isAuthenticated } = useAuth();
-  const { tenant } = useTenant();
-  const [selectedRole, setSelectedRole] = React.useState('SuperAdmin');
+  const [selectedRole, setSelectedRole] = React.useState('CompanyAdmin');
   const [username, setUsername] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState('');
 
-  // Set dynamic page title and meta tags
-  usePageConfig('login', getRoleBasedTitle(selectedRole, tenant?.name));
-
-  React.useEffect(() => {
-    if (tenant) {
-      setSelectedRole('CompanyAdmin');
-    } else {
-      // On main domain, default to Super Admin
-      setSelectedRole('SuperAdmin');
-    }
-  }, [tenant]);
+  usePageConfig('login', getRoleBasedTitle(selectedRole));
 
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Dynamic roles based on domain context
-  const roles = tenant ? [
-    // Subdomain roles (for company users)
+  const roles = [
+    {
+      role: 'SuperAdmin',
+      title: 'Super Admin',
+      icon: <User className="w-8 h-8" />,
+      colorClass: 'bg-blue-600',
+      hoverClass: 'hover:bg-blue-700'
+    },
     {
       role: 'CompanyAdmin',
       title: 'Company Admin',
@@ -53,15 +46,6 @@ const LoginPage: React.FC = () => {
       icon: <Phone className="w-8 h-8" />,
       colorClass: 'bg-orange-500',
       hoverClass: 'hover:bg-orange-600'
-    }
-  ] : [
-    // Main domain role (for super admin only)
-    {
-      role: 'SuperAdmin',
-      title: 'Super Admin',
-      icon: <User className="w-8 h-8" />,
-      colorClass: 'bg-purple-500',
-      hoverClass: 'hover:bg-purple-600'
     }
   ];
 
@@ -115,27 +99,14 @@ const LoginPage: React.FC = () => {
           <div className="flex items-center justify-center mb-4">
             <Shield className="w-5 h-5 text-purple-600 mr-2" />
             <p className="text-lg font-medium text-gray-700">
-              {tenant ? `${tenant.name} - Customer Relationship Management` : 'Multi-Tenant Customer Relationship Management System'}
+              Customer Relationship Management System
             </p>
             <TrendingUp className="w-5 h-5 text-purple-600 ml-2" />
           </div>
         </div>
 
         <div className="max-w-md mx-auto">
-
-          {selectedRole === 'SuperAdmin' && tenant && (
-            <div className="bg-yellow-50/80 backdrop-blur-sm rounded-xl shadow-xl border border-yellow-200 p-4 mb-6 relative z-10">
-              <div className="flex items-start space-x-2">
-                <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-                <div className="text-sm">
-                  <p className="font-medium text-yellow-800">Super Admin Access Only</p>
-                  <p className="text-yellow-700">This subdomain is for company users. Super Admin login is only available on the main domain.</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {roles.length > 1 && (
+          {(
             <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-xl border border-white/20 p-6 mb-6 relative z-10">
               <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">Select Role</h3>
             <div className="relative bg-gray-100/80 rounded-full p-1 backdrop-blur-sm">

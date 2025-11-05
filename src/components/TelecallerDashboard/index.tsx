@@ -23,7 +23,6 @@ import {
 } from 'lucide-react';
 import { customerCaseService, CustomerCase } from '../../services/customerCaseService';
 import { CasesView } from '../TeamIncharge/views/CasesView';
-import { useTenant } from '../../contexts/TenantContext';
 import { useNotification, notificationHelpers } from '../shared/Notification';
 import { CallsPerformanceCard } from './CallsPerformanceCard';
 import { CollectionsSummaryCard } from './CollectionsSummaryCard';
@@ -86,7 +85,6 @@ export const TelecallerDashboard: React.FC<TelecallerDashboardProps> = ({ user, 
     pendingFollowups: 0
   });
   
-  const { tenant } = useTenant();
   const { showNotification } = useNotification();
 
   const menuItems = [
@@ -109,7 +107,7 @@ export const TelecallerDashboard: React.FC<TelecallerDashboardProps> = ({ user, 
   const loadDashboardData = async () => {
     try {
       setIsLoading(true);
-      const cases = await customerCaseService.getCasesByTelecaller(tenant!.id, user!.empId);
+      const cases = await customerCaseService.getCasesByTelecaller(user.id, user!.empId);
       setCustomerCases(cases);
 
       // Calculate metrics from real data

@@ -1,6 +1,5 @@
 import React from 'react';
 import { BarChart3, Users, FileText, BarChart, Settings } from 'lucide-react';
-import { useTenant } from '../../contexts/TenantContext';
 import Layout from '../Layout';
 import { Dashboard } from './Dashboard';
 import { Teams } from './Teams';
@@ -15,7 +14,6 @@ interface TeamInchargeDashboardProps {
 
 export const TeamInchargeDashboard: React.FC<TeamInchargeDashboardProps> = ({ user, onLogout }) => {
   const [activeSection, setActiveSection] = React.useState('dashboard');
-  const { tenant } = useTenant();
 
   const menuItems = [
     { name: 'Dashboard', icon: BarChart3, active: activeSection === 'dashboard', onClick: () => setActiveSection('dashboard') },

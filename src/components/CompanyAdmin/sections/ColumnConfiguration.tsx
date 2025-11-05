@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Columns, Plus, Save, Eye, EyeOff, Trash2, Building2, UserPlus, UserMinus, Eye as ViewIcon, RotateCcw } from 'lucide-react';
 import { useProducts } from '../../../hooks/useProducts';
 import { columnConfigService } from '../../../services/columnConfigService';
-import { useTenant } from '../../../contexts/TenantContext';
 import { useNotification, notificationHelpers } from '../../shared/Notification';
 import { PromptModal } from '../../shared/PromptModal';
 import { ClearAllDataModal } from '../forms/ClearAllDataModal';
@@ -16,7 +15,6 @@ interface LocalColumn {
 }
 
 export const ColumnConfiguration: React.FC = () => {
-  const { tenant } = useTenant();
   const { products, selectedProduct, setSelectedProduct, addProduct, deleteProduct } = useProducts();
   const { showNotification } = useNotification();
 
@@ -52,12 +50,12 @@ export const ColumnConfiguration: React.FC = () => {
       const loadProductColumns = async () => {
         try {
           setIsLoading(true);
-          const configs = await columnConfigService.getColumnConfigurations(tenant.id, selectedProduct);
+          const configs = await columnConfigService.getColumnConfigurations(user.tenantId, selectedProduct);
 
           if (configs.length === 0) {
             // Initialize default columns if none exist
-            await columnConfigService.initializeDefaultColumns(tenant.id, selectedProduct);
-            const newConfigs = await columnConfigService.getColumnConfigurations(tenant.id, selectedProduct);
+            await columnConfigService.initializeDefaultColumns(user.tenantId, selectedProduct);
+            const newConfigs = await columnConfigService.getColumnConfigurations(user.tenantId, selectedProduct);
             setColumns(newConfigs.filter(c => !c.is_custom).map((c, idx) => ({
               id: idx + 1,
               columnName: c.column_name,
@@ -175,7 +173,7 @@ export const ColumnConfiguration: React.FC = () => {
         }))
       ];
 
-      await columnConfigService.saveColumnConfigurations(tenant.id, selectedProduct, allColumns);
+      await columnConfigService.saveColumnConfigurations(user.tenantId, selectedProduct, allColumns);
       showNotification(notificationHelpers.success(
         'Configuration Saved',
         'Column configuration saved successfully!'
@@ -202,7 +200,7 @@ export const ColumnConfiguration: React.FC = () => {
 
     if (companyName && companyName.trim()) {
       try {
-        await addProduct(companyName.trim(), tenant.id);
+        await addProduct(companyName.trim(), user.tenantId);
         showNotification(notificationHelpers.success(
           'Company Added',
           `Company "${companyName}" added successfully!`
@@ -233,7 +231,7 @@ export const ColumnConfiguration: React.FC = () => {
 
     try {
       setIsLoading(true);
-      await columnConfigService.clearAllColumnConfigurations(tenant.id);
+      await columnConfigService.clearAllColumnConfigurations(user.tenantId);
       
       // Reset local state
       setColumns([
@@ -365,7 +363,7 @@ export const ColumnConfiguration: React.FC = () => {
 
                  if (confirm(`Are you sure you want to delete "${selectedProduct}"?`)) {
                    try {
-                     await deleteProduct(selectedProduct, tenant.id);
+                     await deleteProduct(selectedProduct, user.tenantId);
                      showNotification(notificationHelpers.success(
                        'Product Deleted',
                        `Product "${selectedProduct}" deleted successfully!`

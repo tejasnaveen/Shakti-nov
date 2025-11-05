@@ -1,13 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Layout from './Layout';
-import { useTenant } from '../contexts/TenantContext';
-import { getAllTenants, createTenant, updateTenant, deleteTenant } from '../utils/tenantDetection';
 import { getAdminsByTenantId, createAdmin, updateAdmin, deleteAdmin, resetAdminPassword, toggleAdminStatus } from '../utils/adminManagement';
-import { checkSubdomainAvailability } from '../services/subdomainService';
-import { sanitizeSubdomain } from '../utils/subdomainValidation';
+import { getAllTenants, createTenant, updateTenant, deleteTenant, checkSubdomainAvailability, sanitizeSubdomain, Tenant } from '../utils/simplifiedTenantManagement';
 import { getDomainConfig } from '../config/domain';
 import { usePageConfig, getRoleBasedTitle } from '../utils/pageUtils';
-import { Tenant } from '../types/tenant';
 import { CompanyAdmin, CreateAdminRequest, UpdateAdminRequest } from '../types/admin';
 import {
   Home,
@@ -190,7 +186,6 @@ const LINE_CHART_OPTIONS = {
 };
 
 const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ user, onLogout }) => {
-  const { tenant } = useTenant();
   const [activeSection, setActiveSection] = useState('dashboard');
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -639,7 +634,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ user, onLogou
         {/* Tenants Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {tenants.map((tenant) => (
-            <div key={tenant.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div key={user.tenantId} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center">
                   <div className={`w-3 h-3 rounded-full mr-3 ${
@@ -743,7 +738,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ user, onLogou
                   View
                 </button>
                 <button
-                  onClick={() => handleDeleteTenant(tenant.id)}
+                  onClick={() => handleDeleteTenant(user.tenantId)}
                   className="flex-1 bg-red-100 hover:bg-red-200 text-red-700 px-3 py-2 rounded-lg flex items-center justify-center"
                 >
                   <Trash2 className="w-4 h-4 mr-1" />

@@ -4,7 +4,6 @@ import { customerCaseService } from '../../../services/customerCaseService';
 import { TeamService } from '../../../services/teamService';
 import { useNotification, notificationHelpers } from '../../shared/Notification';
 import { useAuth } from '../../../contexts/AuthContext';
-import { useTenant } from '../../../contexts/TenantContext';
 import type { TeamInchargeCase } from '../../../types/caseManagement';
 
 interface AssignCasesModalProps {
@@ -23,7 +22,6 @@ export const AssignCasesModal: React.FC<AssignCasesModalProps> = ({
   onSuccess 
 }) => {
   const { user } = useAuth();
-  const { tenant } = useTenant();
   const { showNotification } = useNotification();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -57,7 +55,7 @@ export const AssignCasesModal: React.FC<AssignCasesModalProps> = ({
       setIsLoading(true);
 
       // Load teams for this team incharge
-      const teamData = await TeamService.getTeams(tenant!.id);
+      const teamData = await TeamService.getTeams(user.id);
       const userTeams = teamData.filter((team: any) => 
         team.team_incharge_id === user?.id && team.status === 'active'
       );
@@ -84,7 +82,7 @@ export const AssignCasesModal: React.FC<AssignCasesModalProps> = ({
     try {
       setIsLoading(true);
       // Load both assigned and unassigned cases for the team
-      const cases = await customerCaseService.getTeamCases(tenant!.id, teamId);
+      const cases = await customerCaseService.getTeamCases(user.id, teamId);
       setAllCases(cases);
     } catch (error) {
       console.error('Error loading team cases:', error);

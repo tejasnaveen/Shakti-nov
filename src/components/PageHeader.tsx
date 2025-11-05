@@ -1,5 +1,4 @@
 import React from 'react';
-import { useTenant } from '../contexts/TenantContext';
 import { useAuth } from '../contexts/AuthContext';
 import { getRoleDisplayName } from '../utils/pageUtils';
 
@@ -17,7 +16,6 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   actions
 }) => {
   const { user } = useAuth();
-  const { tenant } = useTenant();
 
   return (
     <div className="bg-white shadow-sm border-b border-gray-200">
@@ -28,7 +26,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
               <ol className="inline-flex items-center space-x-1 md:space-x-3">
                 <li className="inline-flex items-center">
                   <span className="text-sm font-medium text-gray-500">
-                    {tenant?.name || 'Shakti CRM'}
+                    Shakti CRM
                   </span>
                 </li>
                 {user?.role && (

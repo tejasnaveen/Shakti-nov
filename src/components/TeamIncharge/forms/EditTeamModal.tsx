@@ -3,7 +3,6 @@ import { Modal } from '../../shared/Modal';
 import { UserPlus, UserMinus, Users } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { TeamWithDetails } from '../../../services/teamService';
-import { useTenant } from '../../../contexts/TenantContext';
 import { useProducts } from '../../../hooks/useProducts';
 
 interface SimpleTelecaller {
@@ -25,7 +24,6 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
   onTeamUpdated,
   team
 }) => {
-  const { tenant } = useTenant();
   const { products } = useProducts();
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingTelecallers, setIsLoadingTelecallers] = useState(false);
@@ -61,7 +59,7 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
       const { data: telecallers, error } = await supabase
         .from('employees')
         .select('id, name, emp_id')
-        .eq('tenant_id', tenant.id)
+        .eq('tenant_id', user.tenantId)
         .eq('role', 'Telecaller')
         .eq('status', 'active')
         .or(`team_id.is.null,team_id.eq.${team.id}`)
@@ -116,7 +114,7 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
           updated_at: new Date().toISOString()
         })
         .eq('id', team.id)
-        .eq('tenant_id', tenant.id);
+        .eq('tenant_id', user.tenantId);
 
       if (teamError) throw teamError;
 

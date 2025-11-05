@@ -4,10 +4,8 @@ import { CreateTeam } from './CreateTeam';
 import { EditTeamModal } from './forms/EditTeamModal';
 import { Modal } from '../shared/Modal';
 import { TeamService, TeamWithDetails } from '../../services/teamService';
-import { useTenant } from '../../contexts/TenantContext';
 
 export const Teams: React.FC = () => {
-  const { tenant } = useTenant();
   const [teams, setTeams] = useState<TeamWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showCreateTeamModal, setShowCreateTeamModal] = useState(false);
@@ -29,7 +27,7 @@ export const Teams: React.FC = () => {
 
     try {
       setIsLoading(true);
-      const teamsData = await TeamService.getTeams(tenant.id);
+      const teamsData = await TeamService.getTeams(user.tenantId);
       setTeams(teamsData);
     } catch (error) {
       console.error('Error loading teams:', error);

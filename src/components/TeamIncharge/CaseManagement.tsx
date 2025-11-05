@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, UserCheck, BarChart3, Plus, TrendingUp, Users, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useTenant } from '../../contexts/TenantContext';
 import { customerCaseService } from '../../services/customerCaseService';
 import { TeamService } from '../../services/teamService';
 import { UploadCasesModal, AssignCasesModal, CaseTrackerModal } from './modals';
@@ -18,7 +17,6 @@ interface DashboardStats {
 
 export const CaseManagement: React.FC = () => {
   const { user } = useAuth();
-  const { tenant } = useTenant();
 
   // Modal states
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -51,7 +49,7 @@ export const CaseManagement: React.FC = () => {
       setIsLoading(true);
 
       // Get teams for this team incharge
-      const teamData = await TeamService.getTeams(tenant.id);
+      const teamData = await TeamService.getTeams(user.tenantId);
       const userTeams = teamData.filter(team => 
         team.team_incharge_id === user.id && team.status === 'active'
       );
@@ -68,7 +66,7 @@ export const CaseManagement: React.FC = () => {
       let closedCases = 0;
 
       for (const team of userTeams) {
-        const teamCases = await customerCaseService.getTeamCases(tenant.id, team.id);
+        const teamCases = await customerCaseService.getTeamCases(user.tenantId, team.id);
         totalCases += teamCases.length;
         unassignedCases += teamCases.filter(c => !c.telecaller_id).length;
         assignedCases += teamCases.filter(c => c.status === 'assigned').length;

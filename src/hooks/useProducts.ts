@@ -1,9 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { columnConfigService } from '../services/columnConfigService';
-import { useTenant } from '../contexts/TenantContext';
 
 export const useProducts = () => {
-  const { tenant } = useTenant();
   const [products, setProducts] = useState<string[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -15,7 +13,7 @@ export const useProducts = () => {
 
       try {
         setIsLoading(true);
-        const configs = await columnConfigService.getColumnConfigurations(tenant.id);
+        const configs = await columnConfigService.getColumnConfigurations(user.tenantId);
         const uniqueProducts = [...new Set(configs.map(c => c.product_name))];
         console.log('🔄 Loaded products from Supabase:', uniqueProducts);
         setProducts(uniqueProducts);
