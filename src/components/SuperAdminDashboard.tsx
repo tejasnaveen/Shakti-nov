@@ -425,10 +425,11 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ user, onLogou
         return;
       }
 
-      if (subdomainCheckStatus !== 'available') {
-        alert('Please enter a valid and available subdomain');
-        return;
-      }
+      // Temporarily bypass subdomain validation
+      // if (subdomainCheckStatus !== 'available') {
+      //   alert('Please enter a valid and available subdomain');
+      //   return;
+      // }
 
       const tenantData: Omit<Tenant, 'id' | 'createdAt' | 'updatedAt'> = {
         name: newTenant.name!,
