@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { columnConfigService } from '../services/columnConfigService';
 
-export const useProducts = () => {
+export const useProducts = (tenantId?: string) => {
   const [products, setProducts] = useState<string[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -9,11 +9,11 @@ export const useProducts = () => {
   // Load products from Supabase as the single source of truth
   useEffect(() => {
     const loadProductsFromSupabase = async () => {
-      if (!tenant?.id) return;
+      if (!tenantId) return;
 
       try {
         setIsLoading(true);
-        const configs = await columnConfigService.getColumnConfigurations(user.tenantId);
+        const configs = await columnConfigService.getColumnConfigurations(tenantId);
         const uniqueProducts = [...new Set(configs.map(c => c.product_name))];
         console.log('🔄 Loaded products from Supabase:', uniqueProducts);
         setProducts(uniqueProducts);
@@ -30,7 +30,7 @@ export const useProducts = () => {
     };
 
     loadProductsFromSupabase();
-  }, [tenant?.id]);
+  }, [tenantId]);
 
   // Update selectedProduct if it's not in the list
   useEffect(() => {

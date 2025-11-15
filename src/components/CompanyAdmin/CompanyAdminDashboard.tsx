@@ -38,7 +38,7 @@ export const CompanyAdminDashboard: React.FC<CompanyAdminDashboardProps> = ({ us
   const {
     products,
     addProduct
-  } = useProducts();
+  } = useProducts(user?.tenantId);
 
   const {
     employees,
