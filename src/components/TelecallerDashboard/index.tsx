@@ -107,7 +107,7 @@ export const TelecallerDashboard: React.FC<TelecallerDashboardProps> = ({ user, 
   const loadDashboardData = async () => {
     try {
       setIsLoading(true);
-      const cases = await customerCaseService.getCasesByTelecaller(user.id, user!.empId);
+      const cases = await customerCaseService.getCasesByTelecaller(user.tenantId!, user!.empId);
       setCustomerCases(cases);
 
       // Calculate metrics from real data

@@ -86,11 +86,10 @@ export const customerCaseService = {
         .eq('emp_id', empId)
         .eq('role', 'Telecaller')
         .eq('status', 'active')
-        .single();
+        .maybeSingle();
 
       if (employeeError) {
         console.error('Error finding telecaller employee:', employeeError);
-        // Return empty array instead of throwing error
         return [];
       }
 
