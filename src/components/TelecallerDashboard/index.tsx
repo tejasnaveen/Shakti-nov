@@ -32,6 +32,9 @@ import { TeamToppersCard } from './TeamToppersCard';
 import { ReportsDashboard } from './ReportsDashboard';
 import { NotificationsDrawer } from './NotificationsDrawer';
 import { EditProfileModal } from './EditProfileModal';
+import { CaseDetailsModal } from './CaseDetailsModal';
+import { CallLogModal, CallLogData } from './CallLogModal';
+import { StatusUpdateModal } from './StatusUpdateModal';
 
 interface TelecallerDashboardProps {
   user: {
@@ -84,7 +87,12 @@ export const TelecallerDashboard: React.FC<TelecallerDashboardProps> = ({ user, 
     recoveryToday: 0,
     pendingFollowups: 0
   });
-  
+
+  const [selectedCase, setSelectedCase] = useState<CustomerCase | null>(null);
+  const [isCaseDetailsOpen, setIsCaseDetailsOpen] = useState(false);
+  const [isCallLogOpen, setIsCallLogOpen] = useState(false);
+  const [isStatusUpdateOpen, setIsStatusUpdateOpen] = useState(false);
+
   const { showNotification } = useNotification();
 
   const menuItems = [
@@ -334,25 +342,16 @@ export const TelecallerDashboard: React.FC<TelecallerDashboardProps> = ({ user, 
                   ]}
                   isLoading={isLoading}
                   onViewDetails={(caseData) => {
-                    console.log('View case details:', caseData);
-                    showNotification(notificationHelpers.info(
-                      'Case Details',
-                      `Viewing case: ${caseData.loan_id || 'N/A'}`
-                    ));
+                    setSelectedCase(caseData as any);
+                    setIsCaseDetailsOpen(true);
                   }}
                   onCallCustomer={(caseData) => {
-                    console.log('Call customer:', caseData);
-                    showNotification(notificationHelpers.info(
-                      'Call Customer',
-                      `Calling: ${caseData.customer_name || 'N/A'}`
-                    ));
+                    setSelectedCase(caseData as any);
+                    setIsCallLogOpen(true);
                   }}
                   onUpdateStatus={(caseData) => {
-                    console.log('Update status:', caseData);
-                    showNotification(notificationHelpers.success(
-                      'Status Updated',
-                      `Case ${caseData.loan_id || 'N/A'} status updated`
-                    ));
+                    setSelectedCase(caseData as any);
+                    setIsStatusUpdateOpen(true);
                   }}
                 />
               </div>
@@ -644,6 +643,54 @@ export const TelecallerDashboard: React.FC<TelecallerDashboardProps> = ({ user, 
           ));
         }}
         initialData={profileData}
+      />
+
+      {/* Case Details Modal */}
+      <CaseDetailsModal
+        isOpen={isCaseDetailsOpen}
+        onClose={() => {
+          setIsCaseDetailsOpen(false);
+          setSelectedCase(null);
+        }}
+        caseData={selectedCase}
+      />
+
+      {/* Call Log Modal */}
+      <CallLogModal
+        isOpen={isCallLogOpen}
+        onClose={() => {
+          setIsCallLogOpen(false);
+          setSelectedCase(null);
+        }}
+        caseData={selectedCase}
+        onSave={(logData: CallLogData) => {
+          console.log('Call log saved:', logData);
+          showNotification(notificationHelpers.success(
+            'Call Logged',
+            `Call log saved successfully for ${selectedCase?.customerName}`
+          ));
+          setIsCallLogOpen(false);
+          setSelectedCase(null);
+        }}
+      />
+
+      {/* Status Update Modal */}
+      <StatusUpdateModal
+        isOpen={isStatusUpdateOpen}
+        onClose={() => {
+          setIsStatusUpdateOpen(false);
+          setSelectedCase(null);
+        }}
+        caseData={selectedCase}
+        onSave={(status: string) => {
+          console.log('Status updated:', status);
+          showNotification(notificationHelpers.success(
+            'Status Updated',
+            `Case status updated to: ${status}`
+          ));
+          setIsStatusUpdateOpen(false);
+          setSelectedCase(null);
+        }}
       />
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Eye, Phone, Copy } from 'lucide-react';
+import { Eye, Phone, Copy, Filter, ArrowUpDown } from 'lucide-react';
 import { CustomerCase, ColumnConfig } from './types';
 import { getDPDColor, copyToClipboard, filterCases, paginateCases, getTotalPages, debounce } from './utils';
 
@@ -23,6 +23,9 @@ const CustomerCaseTable: React.FC<CustomerCaseTableProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+  const [dpdFilter, setDpdFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('dpd');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // Debounced search
   const debouncedSearch = useMemo(
@@ -36,11 +39,44 @@ const CustomerCaseTable: React.FC<CustomerCaseTableProps> = ({
     setCurrentPage(1); // Reset to first page on search
   };
 
-  // Filter and paginate cases
-  const filteredCases = useMemo(() =>
-    filterCases(customerCases, searchTerm),
-    [customerCases, searchTerm]
-  );
+  // Filter, sort, and paginate cases
+  const filteredCases = useMemo(() => {
+    let cases = filterCases(customerCases, searchTerm);
+
+    // Apply DPD filter
+    if (dpdFilter !== 'all') {
+      cases = cases.filter(c => {
+        const dpd = c.dpd || 0;
+        if (dpdFilter === '0-30') return dpd <= 30;
+        if (dpdFilter === '31-60') return dpd > 30 && dpd <= 60;
+        if (dpdFilter === '60+') return dpd > 60;
+        return true;
+      });
+    }
+
+    // Apply sorting
+    cases.sort((a, b) => {
+      let aVal: any = a[sortBy as keyof CustomerCase];
+      let bVal: any = b[sortBy as keyof CustomerCase];
+
+      // Handle numeric fields
+      if (sortBy === 'dpd') {
+        aVal = a.dpd || 0;
+        bVal = b.dpd || 0;
+      } else if (sortBy.includes('Amount')) {
+        aVal = parseFloat(String(aVal).replace(/[^0-9.-]/g, '')) || 0;
+        bVal = parseFloat(String(bVal).replace(/[^0-9.-]/g, '')) || 0;
+      }
+
+      if (sortOrder === 'asc') {
+        return aVal > bVal ? 1 : -1;
+      } else {
+        return aVal < bVal ? 1 : -1;
+      }
+    });
+
+    return cases;
+  }, [customerCases, searchTerm, dpdFilter, sortBy, sortOrder]);
 
   const totalPages = getTotalPages(filteredCases.length, itemsPerPage);
   const paginatedCases = useMemo(() =>
@@ -167,17 +203,61 @@ const CustomerCaseTable: React.FC<CustomerCaseTableProps> = ({
         </div>
 
         {/* Search and Filter Bar */}
-        <div className="mt-4 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <input
-              type="text"
-              placeholder="Search by name, loan ID, or mobile..."
-              onChange={handleSearchChange}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 w-80"
-            />
-            <span className="text-sm text-gray-600">
-              Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, filteredCases.length)} of {filteredCases.length} cases
-            </span>
+        <div className="mt-4 space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center space-x-4">
+              <input
+                type="text"
+                placeholder="Search by name, loan ID, or mobile..."
+                onChange={handleSearchChange}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 w-80"
+              />
+              <span className="text-sm text-gray-600">
+                Showing {filteredCases.length === 0 ? 0 : ((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, filteredCases.length)} of {filteredCases.length} cases
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-4 flex-wrap gap-2">
+            <div className="flex items-center space-x-2">
+              <Filter className="w-4 h-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">DPD Filter:</span>
+              <select
+                value={dpdFilter}
+                onChange={(e) => {
+                  setDpdFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <option value="all">All Cases</option>
+                <option value="0-30">0-30 Days</option>
+                <option value="31-60">31-60 Days</option>
+                <option value="60+">60+ Days</option>
+              </select>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <ArrowUpDown className="w-4 h-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">Sort By:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <option value="dpd">DPD</option>
+                <option value="customerName">Customer Name</option>
+                <option value="outstandingAmount">Outstanding Amount</option>
+                <option value="emiAmount">EMI Amount</option>
+                <option value="lastPaidDate">Last Paid Date</option>
+              </select>
+              <button
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                className="px-3 py-1 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition-colors"
+              >
+                {sortOrder === 'asc' ? '↑ Asc' : '↓ Desc'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
