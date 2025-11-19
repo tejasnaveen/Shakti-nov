@@ -195,9 +195,9 @@ export const UploadCasesModal: React.FC<UploadCasesModalProps> = ({
 
       // Prepare cases for bulk insert
       const cases = excelData.map(row => {
-        // Extract required fields from row data
-        const loanId = row['Loan ID'] || row['loan_id'] || row['LoanID'] || '';
-        const customerName = row['Customer Name'] || row['customer_name'] || row['CustomerName'] || '';
+        // Extract required fields from row data (using camelCase from excelUtils parser)
+        const loanId = row['loanId'] || row['loan_id'] || '';
+        const customerName = row['customerName'] || row['customer_name'] || '';
 
         return {
           tenant_id: user.tenantId,
