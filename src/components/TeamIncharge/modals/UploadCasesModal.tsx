@@ -39,24 +39,29 @@ export const UploadCasesModal: React.FC<UploadCasesModalProps> = ({
 
   // Load products and teams
   useEffect(() => {
-    if (isOpen && tenant?.id && user?.id) {
+    if (isOpen && user?.tenantId && user?.id) {
       loadProductsAndTeams();
     }
-  }, [isOpen, tenant?.id, user?.id]);
+  }, [isOpen, user?.tenantId, user?.id]);
 
   const loadProductsAndTeams = async () => {
+    if (!user?.tenantId || !user?.id) {
+      console.warn('User or tenant ID not available');
+      return;
+    }
+
     try {
       setIsLoading(true);
-      
+
       // Get unique products from column configurations
-      const configs = await columnConfigService.getColumnConfigurations(user.id);
+      const configs = await columnConfigService.getColumnConfigurations(user.tenantId);
       const uniqueProducts = [...new Set(configs.map(c => c.product_name))];
       setProducts(uniqueProducts);
 
       // Get teams for this team incharge
-      const teamData = await TeamService.getTeams(user.id);
-      const userTeams = teamData.filter((team: any) => 
-        team.team_incharge_id === user?.id && team.status === 'active'
+      const teamData = await TeamService.getTeams(user.tenantId);
+      const userTeams = teamData.filter((team: any) =>
+        team.team_incharge_id === user.id && team.status === 'active'
       );
       setTeams(userTeams);
     } catch (error) {

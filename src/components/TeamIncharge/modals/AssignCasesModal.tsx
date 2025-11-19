@@ -41,10 +41,10 @@ export const AssignCasesModal: React.FC<AssignCasesModalProps> = ({
   const [actionType, setActionType] = useState<'assign' | 'unassign'>('assign');
 
   useEffect(() => {
-    if (isOpen && tenant?.id && user?.id) {
+    if (isOpen && user?.tenantId && user?.id) {
       loadInitialData();
     }
-  }, [isOpen, tenant?.id, user?.id]);
+  }, [isOpen, user?.tenantId, user?.id]);
 
   useEffect(() => {
     applyFilters();

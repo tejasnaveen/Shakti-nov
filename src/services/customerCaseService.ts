@@ -232,26 +232,60 @@ export const customerCaseService = {
 
   // Team Incharge specific methods
   async getTeamCases(tenantId: string, teamId: string): Promise<TeamInchargeCase[]> {
-    const { data, error } = await supabase
-      .from(CUSTOMER_CASE_TABLE)
-      .select(`
-        *,
-        telecaller:employees!telecaller_id(
-          id,
-          name,
-          emp_id
-        )
-      `)
-      .eq('tenant_id', tenantId)
-      .eq('team_id', teamId)
-      .order('created_at', { ascending: false });
+    try {
+      // First get all cases for the team
+      const { data: cases, error: casesError } = await supabase
+        .from(CUSTOMER_CASE_TABLE)
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .eq('team_id', teamId)
+        .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching team cases:', error);
-      throw new Error('Failed to fetch team cases');
+      if (casesError) {
+        console.error('Error fetching team cases:', casesError);
+        throw new Error('Failed to fetch team cases');
+      }
+
+      if (!cases || cases.length === 0) {
+        return [];
+      }
+
+      // Get unique telecaller IDs
+      const telecallerIds = [...new Set(cases.filter(c => c.telecaller_id).map(c => c.telecaller_id))];
+
+      // If no telecallers, return cases as is
+      if (telecallerIds.length === 0) {
+        return cases as TeamInchargeCase[];
+      }
+
+      // Fetch telecaller details
+      const { data: telecallers, error: telecallersError } = await supabase
+        .from('employees')
+        .select('id, name, emp_id')
+        .eq('tenant_id', tenantId)
+        .in('id', telecallerIds);
+
+      if (telecallersError) {
+        console.error('Error fetching telecallers:', telecallersError);
+        return cases as TeamInchargeCase[];
+      }
+
+      // Create a map of telecaller details
+      const telecallerMap = new Map(
+        telecallers?.map(t => [t.id, t]) || []
+      );
+
+      // Merge telecaller details with cases
+      const casesWithTelecallers = cases.map(caseItem => ({
+        ...caseItem,
+        telecaller: caseItem.telecaller_id ? telecallerMap.get(caseItem.telecaller_id) : null
+      }));
+
+      return casesWithTelecallers as TeamInchargeCase[];
+    } catch (error) {
+      console.error('Error in getTeamCases:', error);
+      throw error;
     }
-
-    return data || [];
   },
 
   async getUnassignedTeamCases(tenantId: string, teamId: string): Promise<TeamInchargeCase[]> {

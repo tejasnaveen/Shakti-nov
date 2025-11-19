@@ -67,10 +67,10 @@ export const CaseTrackerModal: React.FC<CaseTrackerModalProps> = ({
   const [itemsPerPage] = useState(20);
 
   useEffect(() => {
-    if (isOpen && tenant?.id && user?.id) {
+    if (isOpen && user?.tenantId && user?.id) {
       loadInitialData();
     }
-  }, [isOpen, tenant?.id, user?.id]);
+  }, [isOpen, user?.tenantId, user?.id]);
 
   useEffect(() => {
     loadCases();
@@ -115,7 +115,7 @@ export const CaseTrackerModal: React.FC<CaseTrackerModalProps> = ({
   };
 
   const loadCases = async () => {
-    if (!selectedTeam || !tenant?.id) return;
+    if (!selectedTeam || !user?.tenantId) return;
 
     try {
       setIsLoading(true);
@@ -181,7 +181,7 @@ export const CaseTrackerModal: React.FC<CaseTrackerModalProps> = ({
   };
 
   const confirmDeleteCase = async () => {
-    if (!caseToDelete || !tenant?.id) return;
+    if (!caseToDelete || !user?.tenantId) return;
 
     try {
       await customerCaseService.deleteCase(caseToDelete.id);
@@ -299,7 +299,7 @@ export const CaseTrackerModal: React.FC<CaseTrackerModalProps> = ({
   };
 
   const loadTelecallerCases = async (telecallerId: string) => {
-    if (!tenant?.id || !selectedTeam) return;
+    if (!user?.tenantId || !selectedTeam) return;
 
     try {
       const telecallerFilters: CaseFilters = {
