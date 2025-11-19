@@ -194,35 +194,64 @@ export const UploadCasesModal: React.FC<UploadCasesModalProps> = ({
       }
 
       // Prepare cases for bulk insert
-      const cases = excelData.map(row => ({
-        tenant_id: user.tenantId,
-        team_id: selectedTeam,
-        product_name: selectedProduct,
-        case_data: row,
-        status: 'new' as const,
-        uploaded_by: user.id
-      }));
+      const cases = excelData.map(row => {
+        // Extract required fields from row data
+        const loanId = row['Loan ID'] || row['loan_id'] || row['LoanID'] || '';
+        const customerName = row['Customer Name'] || row['customer_name'] || row['CustomerName'] || '';
+
+        return {
+          tenant_id: user.tenantId,
+          team_id: selectedTeam,
+          product_name: selectedProduct,
+          loan_id: loanId,
+          customer_name: customerName,
+          case_data: row,
+          status: 'new' as const,
+          uploaded_by: user.id
+        };
+      });
 
       // Validate each row
       const validationErrors: any[] = [];
       const validCases: typeof cases = [];
 
-      excelData.forEach((row, index) => {
-        const validation = excelUtils.validateCaseData(row, columnConfigs);
-        if (validation.valid) {
-          validCases.push(cases[index]);
+      cases.forEach((caseItem, index) => {
+        const errors: string[] = [];
+
+        // Check required fields
+        if (!caseItem.loan_id || caseItem.loan_id.trim() === '') {
+          errors.push('Loan ID is required');
+        }
+        if (!caseItem.customer_name || caseItem.customer_name.trim() === '') {
+          errors.push('Customer Name is required');
+        }
+
+        // Validate using column configurations
+        const validation = excelUtils.validateCaseData(excelData[index], columnConfigs);
+        if (!validation.valid) {
+          errors.push(...validation.errors);
+        }
+
+        if (errors.length === 0) {
+          validCases.push(caseItem);
         } else {
           validationErrors.push({
             row: index + 1,
-            errors: validation.errors
+            errors
           });
         }
       });
 
       if (validationErrors.length > 0) {
+        console.error('Validation errors:', validationErrors);
+        const errorDetails = validationErrors.slice(0, 3).map(e =>
+          `Row ${e.row}: ${e.errors.join(', ')}`
+        ).join('\n');
+        const moreErrors = validationErrors.length > 3 ? `\n...and ${validationErrors.length - 3} more` : '';
+
         showNotification(notificationHelpers.error(
           'Validation Errors',
-          `${validationErrors.length} rows have validation errors`
+          `${validationErrors.length} rows have errors:\n${errorDetails}${moreErrors}`
         ));
         return;
       }
