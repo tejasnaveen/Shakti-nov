@@ -5,6 +5,7 @@ import {
   TeamUpdate,
   TeamWithDetails,
   TEAM_TABLE,
+  EMPLOYEE_TABLE,
   Telecaller,
   TeamIncharge
 } from '../models';
@@ -19,22 +20,61 @@ export class TeamService {
     created_by?: string;
   }): Promise<Team> {
     console.log('Creating team with data:', teamData);
-    
+
     // Validate input data
     if (!teamData.tenant_id) {
-      throw new Error('tenant_id is required');
+      throw new Error('Tenant ID is required');
     }
     if (!teamData.name || teamData.name.trim().length === 0) {
       throw new Error('Team name is required and cannot be empty');
     }
     if (!teamData.team_incharge_id) {
-      throw new Error('team_incharge_id is required');
+      throw new Error('Team in-charge is required');
     }
     if (!teamData.product_name || teamData.product_name.trim().length === 0) {
-      throw new Error('product_name is required and cannot be empty');
+      throw new Error('Product name is required and cannot be empty');
     }
 
     try {
+      // Check if team name already exists for this tenant
+      const { data: existingTeam, error: checkError } = await supabase
+        .from(TEAM_TABLE)
+        .select('id, name')
+        .eq('tenant_id', teamData.tenant_id)
+        .eq('name', teamData.name.trim())
+        .maybeSingle();
+
+      if (checkError) {
+        console.error('Error checking existing team:', checkError);
+        throw new Error('Failed to verify team name availability');
+      }
+
+      if (existingTeam) {
+        throw new Error(`Team with name "${teamData.name.trim()}" already exists`);
+      }
+
+      // Verify team in-charge exists and has correct role
+      const { data: teamIncharge, error: inchargeError } = await supabase
+        .from(EMPLOYEE_TABLE)
+        .select('id, name, role')
+        .eq('id', teamData.team_incharge_id)
+        .eq('tenant_id', teamData.tenant_id)
+        .maybeSingle();
+
+      if (inchargeError) {
+        console.error('Error verifying team in-charge:', inchargeError);
+        throw new Error('Failed to verify team in-charge');
+      }
+
+      if (!teamIncharge) {
+        throw new Error('Team in-charge not found');
+      }
+
+      if (teamIncharge.role !== 'TeamIncharge' && teamIncharge.role !== 'CompanyAdmin') {
+        throw new Error('Selected user does not have permission to be a team in-charge');
+      }
+
+      // Create the team
       const teamInsert: TeamInsert = {
         tenant_id: teamData.tenant_id,
         name: teamData.name.trim(),
@@ -51,26 +91,62 @@ export class TeamService {
 
       if (teamError) {
         console.error('Team creation error:', teamError);
-        throw new Error(`Failed to create team: ${teamError.message}`);
+
+        // Provide user-friendly error messages
+        if (teamError.code === '23505') {
+          throw new Error('A team with this name already exists');
+        } else if (teamError.code === '23503') {
+          throw new Error('Invalid team in-charge or tenant reference');
+        } else {
+          throw new Error(`Failed to create team: ${teamError.message}`);
+        }
       }
 
       console.log('Team created successfully:', team);
 
       // Update telecallers to assign them to this team
       if (teamData.telecaller_ids && teamData.telecaller_ids.length > 0) {
-        console.log('Updating telecaller assignments:', teamData.telecaller_ids);
-        
-        const { error: updateError } = await supabase
+        console.log('Assigning telecallers to team:', teamData.telecaller_ids);
+
+        // Verify all telecallers exist and are available
+        const { data: telecallers, error: telecallerCheckError } = await supabase
           .from(EMPLOYEE_TABLE)
-          .update({ team_id: team.id })
+          .select('id, name, role, team_id')
+          .eq('tenant_id', teamData.tenant_id)
+          .eq('role', 'Telecaller')
           .in('id', teamData.telecaller_ids);
 
-        if (updateError) {
-          console.error('Telecaller assignment error:', updateError);
-          // Don't fail the whole operation if telecaller assignment fails
-          console.warn('Team created but telecaller assignment failed:', updateError.message);
+        if (telecallerCheckError) {
+          console.error('Error verifying telecallers:', telecallerCheckError);
+          console.warn('Team created but telecaller verification failed');
         } else {
-          console.log('Telecaller assignments updated successfully');
+          // Check if any telecallers are already assigned
+          const alreadyAssigned = telecallers?.filter(t => t.team_id !== null) || [];
+          if (alreadyAssigned.length > 0) {
+            console.warn('Some telecallers are already assigned to teams:',
+              alreadyAssigned.map(t => t.name).join(', '));
+          }
+
+          // Only assign unassigned telecallers
+          const availableTelecallerIds = telecallers
+            ?.filter(t => t.team_id === null)
+            .map(t => t.id) || [];
+
+          if (availableTelecallerIds.length > 0) {
+            const { error: updateError } = await supabase
+              .from(EMPLOYEE_TABLE)
+              .update({ team_id: team.id })
+              .in('id', availableTelecallerIds);
+
+            if (updateError) {
+              console.error('Telecaller assignment error:', updateError);
+              console.warn('Team created but telecaller assignment failed:', updateError.message);
+            } else {
+              console.log(`Successfully assigned ${availableTelecallerIds.length} telecaller(s) to team`);
+            }
+          } else {
+            console.warn('No available telecallers to assign');
+          }
         }
       }
 
