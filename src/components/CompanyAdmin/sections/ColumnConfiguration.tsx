@@ -5,6 +5,7 @@ import { columnConfigService } from '../../../services/columnConfigService';
 import { useNotification, notificationHelpers } from '../../shared/Notification';
 import { PromptModal } from '../../shared/PromptModal';
 import { ClearAllDataModal } from '../forms/ClearAllDataModal';
+import { useConfirmation } from '../../../contexts/ConfirmationContext';
 
 interface LocalColumn {
   id: string | number;
@@ -17,6 +18,7 @@ interface LocalColumn {
 export const ColumnConfiguration: React.FC = () => {
   const { products, selectedProduct, setSelectedProduct, addProduct, deleteProduct } = useProducts();
   const { showNotification } = useNotification();
+  const { showConfirmation } = useConfirmation();
 
   const [showPreview, setShowPreview] = useState(false);
   const [showAddCompanyModal, setShowAddCompanyModal] = useState(false);
@@ -126,7 +128,10 @@ export const ColumnConfiguration: React.FC = () => {
       // Check for duplicate columnName
       const existingColumnNames = [...columns, ...customColumns].map(col => col.columnName);
       if (existingColumnNames.includes(newCustomColumn.columnName)) {
-        alert(`Column name "${newCustomColumn.columnName}" already exists. Please choose a unique name.`);
+        showNotification(notificationHelpers.error(
+          'Duplicate Column',
+          `Column name "${newCustomColumn.columnName}" already exists. Please choose a unique name.`
+        ));
         return;
       }
 
@@ -140,13 +145,31 @@ export const ColumnConfiguration: React.FC = () => {
 
       setCustomColumns(prev => [...prev, newColumn]);
       setNewCustomColumn({ columnName: '', displayName: '', isActive: true });
+      showNotification(notificationHelpers.success(
+        'Column Added',
+        `Custom column "${newColumn.displayName}" added successfully!`
+      ));
     }
   };
 
   const handleRemoveCustomColumn = (columnId: string | number) => {
-    if (confirm('Are you sure you want to delete this custom column?')) {
-      setCustomColumns(prev => prev.filter(col => col.id !== columnId));
-    }
+    const column = customColumns.find(col => col.id === columnId);
+    if (!column) return;
+
+    showConfirmation({
+      title: 'Delete Custom Column',
+      message: `Are you sure you want to delete the custom column "${column.displayName}"? This action cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger',
+      onConfirm: async () => {
+        setCustomColumns(prev => prev.filter(col => col.id !== columnId));
+        showNotification(notificationHelpers.success(
+          'Column Deleted',
+          `Custom column "${column.displayName}" has been deleted.`
+        ));
+      }
+    });
   };
 
   const handleSaveConfiguration = async () => {
@@ -361,20 +384,27 @@ export const ColumnConfiguration: React.FC = () => {
                    return;
                  }
 
-                 if (confirm(`Are you sure you want to delete "${selectedProduct}"?`)) {
-                   try {
-                     await deleteProduct(selectedProduct, user.tenantId);
-                     showNotification(notificationHelpers.success(
-                       'Product Deleted',
-                       `Product "${selectedProduct}" deleted successfully!`
-                     ));
-                   } catch (error: any) {
-                     showNotification(notificationHelpers.error(
-                       'Failed to Delete Product',
-                       error.message || 'Failed to delete product'
-                     ));
+                 showConfirmation({
+                   title: 'Delete Product',
+                   message: `Are you sure you want to delete product "${selectedProduct}"? This will remove all associated configurations.`,
+                   confirmText: 'Delete',
+                   cancelText: 'Cancel',
+                   type: 'danger',
+                   onConfirm: async () => {
+                     try {
+                       await deleteProduct(selectedProduct, user.tenantId);
+                       showNotification(notificationHelpers.success(
+                         'Product Deleted',
+                         `Product "${selectedProduct}" deleted successfully!`
+                       ));
+                     } catch (error: any) {
+                       showNotification(notificationHelpers.error(
+                         'Failed to Delete Product',
+                         error.message || 'Failed to delete product'
+                       ));
+                     }
                    }
-                 }
+                 });
                }}
                className="flex items-center justify-center w-10 h-10 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                title="Delete Product"

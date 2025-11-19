@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Search, UserPlus, Edit2, Trash2, Upload, FileSpreadsheet, Eye, Key, Filter } from 'lucide-react';
 import type { Employee } from '../../../types/employee';
 import { BulkDeleteModal } from '../forms/BulkDeleteModal';
+import { useConfirmation } from '../../../contexts/ConfirmationContext';
 
 // TODO: Create Table, Badge, EmptyState components or import from shared
 
@@ -30,6 +31,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
   onResetPassword,
   isLoading = false,
 }) => {
+  const { showConfirmation } = useConfirmation();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedEmployees, setSelectedEmployees] = useState<Set<string>>(new Set());
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
@@ -172,9 +174,16 @@ export const UserManagement: React.FC<UserManagementProps> = ({
           )}
           <button
             onClick={() => {
-              if (confirm(`Delete ${emp.name}?`)) {
-                onDeleteEmployee(emp.id);
-              }
+              showConfirmation({
+                title: 'Delete Employee',
+                message: `Are you sure you want to delete "${emp.name}"? This action cannot be undone.`,
+                confirmText: 'Delete',
+                cancelText: 'Cancel',
+                type: 'danger',
+                onConfirm: async () => {
+                  await onDeleteEmployee(emp.id);
+                }
+              });
             }}
             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             aria-label="Delete employee"

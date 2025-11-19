@@ -4,8 +4,12 @@ import { CreateTeam } from './CreateTeam';
 import { EditTeamModal } from './forms/EditTeamModal';
 import { Modal } from '../shared/Modal';
 import { TeamService, TeamWithDetails } from '../../services/teamService';
+import { useConfirmation } from '../../contexts/ConfirmationContext';
+import { useNotification, notificationHelpers } from '../shared/Notification';
 
 export const Teams: React.FC = () => {
+  const { showConfirmation } = useConfirmation();
+  const { showNotification } = useNotification();
   const [teams, setTeams] = useState<TeamWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showCreateTeamModal, setShowCreateTeamModal] = useState(false);
@@ -53,25 +57,48 @@ export const Teams: React.FC = () => {
   };
 
   const handleDeleteTeam = async (teamId: string) => {
-    if (confirm('Are you sure you want to delete this team?')) {
-      try {
-        await TeamService.deleteTeam(teamId);
-        loadTeams();
-        alert('Team deleted successfully!');
-      } catch (error) {
-        console.error('Error deleting team:', error);
-        alert('Failed to delete team. Please try again.');
+    const team = teams.find(t => t.id === teamId);
+    if (!team) return;
+
+    showConfirmation({
+      title: 'Delete Team',
+      message: `Are you sure you want to delete team "${team.name}"? This will remove all team assignments and cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          await TeamService.deleteTeam(teamId);
+          loadTeams();
+          showNotification(notificationHelpers.success(
+            'Team Deleted',
+            `Team "${team.name}" deleted successfully!`
+          ));
+        } catch (error) {
+          console.error('Error deleting team:', error);
+          showNotification(notificationHelpers.error(
+            'Delete Failed',
+            'Failed to delete team. Please try again.'
+          ));
+        }
       }
-    }
+    });
   };
 
   const handleToggleStatus = async (teamId: string) => {
     try {
       await TeamService.toggleTeamStatus(teamId);
       loadTeams();
+      showNotification(notificationHelpers.success(
+        'Status Updated',
+        'Team status has been updated successfully.'
+      ));
     } catch (error) {
       console.error('Error toggling team status:', error);
-      alert('Failed to update team status. Please try again.');
+      showNotification(notificationHelpers.error(
+        'Update Failed',
+        'Failed to update team status. Please try again.'
+      ));
     }
   };
 

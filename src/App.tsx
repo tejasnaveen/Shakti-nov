@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { NotificationProvider } from './components/shared/Notification';
+import { ConfirmationProvider } from './contexts/ConfirmationContext';
 import LoginPage from './components/LoginPage';
 import SuperAdminDashboard from './components/SuperAdminDashboard';
 import { CompanyAdminDashboard } from './components/CompanyAdmin/CompanyAdminDashboard';
@@ -86,7 +87,9 @@ function App() {
     <StrictMode>
       <AuthProvider>
         <NotificationProvider>
-          <AppContent />
+          <ConfirmationProvider>
+            <AppContent />
+          </ConfirmationProvider>
         </NotificationProvider>
       </AuthProvider>
     </StrictMode>

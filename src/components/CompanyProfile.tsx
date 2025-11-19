@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNotification, notificationHelpers } from './shared/Notification';
 import {
   Building2,
   Phone,
@@ -71,6 +72,7 @@ interface CompanyProfileProps {
 }
 
 const CompanyProfile: React.FC<CompanyProfileProps> = ({ company, onBack }) => {
+  const { showNotification } = useNotification();
   const [showEditModal, setShowEditModal] = useState(false);
   const [editFormData, setEditFormData] = useState({
     companyName: '',
@@ -367,7 +369,10 @@ const CompanyProfile: React.FC<CompanyProfileProps> = ({ company, onBack }) => {
       // TODO: Implement secure password reset API call
 
       // Show success message
-      alert(`Password has been successfully reset for ${selectedAdminForReset.name} (${selectedAdminForReset.empId})`);
+      showNotification(notificationHelpers.success(
+        'Password Reset',
+        `Password has been successfully reset for ${selectedAdminForReset.name} (${selectedAdminForReset.empId})`
+      ));
 
       setShowPasswordResetModal(false);
       setSelectedAdminForReset(null);
@@ -423,7 +428,10 @@ const CompanyProfile: React.FC<CompanyProfileProps> = ({ company, onBack }) => {
       // TODO: Implement secure password update API call
 
       // Show success message
-      alert(`Password has been successfully updated for ${selectedAdminForManualUpdate.name} (${selectedAdminForManualUpdate.empId})`);
+      showNotification(notificationHelpers.success(
+        'Password Updated',
+        `Password has been successfully updated for ${selectedAdminForManualUpdate.name} (${selectedAdminForManualUpdate.empId})`
+      ));
 
       setShowManualPasswordUpdateModal(false);
       setSelectedAdminForManualUpdate(null);

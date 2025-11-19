@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTeams } from '../../hooks/useTeams';
 import { useProducts } from '../../hooks/useProducts';
 import type { Telecaller } from '../../types';
+import { useNotification, notificationHelpers } from '../shared/Notification';
 
 interface CreateTeamProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ interface CreateTeamProps {
 }
 
 export const CreateTeam: React.FC<CreateTeamProps> = ({ isOpen, onClose, onTeamCreated }) => {
+  const { showNotification } = useNotification();
   const { user } = useAuth();
   const { createTeam } = useTeams(tenant?.id);
   const { products } = useProducts();
@@ -64,12 +66,18 @@ export const CreateTeam: React.FC<CreateTeamProps> = ({ isOpen, onClose, onTeamC
     });
     
     if (!teamName.trim() || !selectedColumn) {
-      alert('Please fill in all required fields');
+      showNotification(notificationHelpers.error(
+        'Validation Error',
+        'Please fill in all required fields'
+      ));
       return;
     }
 
     if (!tenant?.id || !user?.id) {
-      alert('User or tenant information not found');
+      showNotification(notificationHelpers.error(
+        'Error',
+        'User or tenant information not found'
+      ));
       return;
     }
 
@@ -102,12 +110,18 @@ export const CreateTeam: React.FC<CreateTeamProps> = ({ isOpen, onClose, onTeamC
         // Call the onTeamCreated callback if provided
         onTeamCreated?.();
         
-        alert('Team created successfully!');
+        showNotification(notificationHelpers.success(
+          'Team Created',
+          'Team created successfully!'
+        ));
         onClose();
       }
     } catch (error) {
       console.error('Error creating team:', error);
-      alert(`Failed to create team: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      showNotification(notificationHelpers.error(
+        'Failed to Create Team',
+        error instanceof Error ? error.message : 'Unknown error'
+      ));
     } finally {
       setIsSubmitting(false);
     }

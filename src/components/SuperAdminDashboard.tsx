@@ -5,6 +5,8 @@ import { getAllTenants, createTenant, updateTenant, deleteTenant, checkSubdomain
 import { getDomainConfig } from '../config/domain';
 import { usePageConfig, getRoleBasedTitle } from '../utils/pageUtils';
 import { CompanyAdmin, CreateAdminRequest, UpdateAdminRequest } from '../types/admin';
+import { useConfirmation } from '../contexts/ConfirmationContext';
+import { useNotification, notificationHelpers } from './shared/Notification';
 import {
   Home,
   Building2,
@@ -186,6 +188,8 @@ const LINE_CHART_OPTIONS = {
 };
 
 const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ user, onLogout }) => {
+  const { showConfirmation } = useConfirmation();
+  const { showNotification } = useNotification();
   const [activeSection, setActiveSection] = useState('dashboard');
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -270,7 +274,10 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ user, onLogou
       if (!viewingTenant) return;
 
       if (!newAdmin.name || !newAdmin.employeeId || !newAdmin.email || !newAdmin.password) {
-        alert('Please fill in all required fields');
+        showNotification(notificationHelpers.error(
+          'Validation Error',
+          'Please fill in all required fields'
+        ));
         return;
       }
 
@@ -293,10 +300,17 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ user, onLogou
       setTenantAdmins([...tenantAdmins, createdAdmin]);
       setShowAdminModal(false);
       resetAdminForm();
+      showNotification(notificationHelpers.success(
+        'Admin Created',
+        `Admin "${adminData.name}" created successfully!`
+      ));
     } catch (error) {
       console.error('Error creating admin:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to create admin. Please check all fields and try again.';
-      alert(`Failed to create admin: ${errorMessage}`);
+      showNotification(notificationHelpers.error(
+        'Failed to Create Admin',
+        errorMessage
+      ));
     }
   };
 
@@ -316,42 +330,91 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ user, onLogou
       setEditingAdmin(null);
       setShowAdminModal(false);
       resetAdminForm();
+      showNotification(notificationHelpers.success(
+        'Admin Updated',
+        `Admin "${updates.name}" updated successfully!`
+      ));
     } catch (error) {
       console.error('Error updating admin:', error);
-      alert('Failed to update admin');
+      showNotification(notificationHelpers.error(
+        'Update Failed',
+        'Failed to update admin. Please try again.'
+      ));
     }
   };
 
   const handleDeleteAdmin = async (adminId: string) => {
-    if (!confirm('Are you sure you want to delete this admin?')) return;
+    const admin = tenantAdmins.find(a => a.id === adminId);
+    if (!admin) return;
 
-    try {
-      await deleteAdmin(adminId);
-      setTenantAdmins(tenantAdmins.filter(a => a.id !== adminId));
-    } catch (error) {
-      console.error('Error deleting admin:', error);
-      alert('Failed to delete admin');
-    }
+    showConfirmation({
+      title: 'Delete Admin',
+      message: `Are you sure you want to delete admin "${admin.name}"? This action cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          await deleteAdmin(adminId);
+          setTenantAdmins(tenantAdmins.filter(a => a.id !== adminId));
+          showNotification(notificationHelpers.success(
+            'Admin Deleted',
+            `Admin "${admin.name}" has been deleted successfully.`
+          ));
+        } catch (error) {
+          console.error('Error deleting admin:', error);
+          showNotification(notificationHelpers.error(
+            'Delete Failed',
+            'Failed to delete admin. Please try again.'
+          ));
+        }
+      }
+    });
   };
 
   const handleToggleAdminStatus = async (adminId: string) => {
     try {
       const updatedAdmin = await toggleAdminStatus(adminId);
       setTenantAdmins(tenantAdmins.map(a => a.id === adminId ? updatedAdmin : a));
+      showNotification(notificationHelpers.success(
+        'Status Updated',
+        `Admin status updated to ${updatedAdmin.status}.`
+      ));
     } catch (error) {
       console.error('Error toggling admin status:', error);
-      alert('Failed to update admin status');
+      showNotification(notificationHelpers.error(
+        'Update Failed',
+        'Failed to update admin status. Please try again.'
+      ));
     }
   };
 
   const handleResetPassword = async (adminId: string) => {
-    try {
-      const newPassword = await resetAdminPassword(adminId);
-      alert(`Password reset successfully! New temporary password: ${newPassword}`);
-    } catch (error) {
-      console.error('Error resetting password:', error);
-      alert('Failed to reset password');
-    }
+    const admin = tenantAdmins.find(a => a.id === adminId);
+    if (!admin) return;
+
+    showConfirmation({
+      title: 'Reset Password',
+      message: `Are you sure you want to reset the password for admin "${admin.name}"? A new temporary password will be generated.`,
+      confirmText: 'Reset Password',
+      cancelText: 'Cancel',
+      type: 'warning',
+      onConfirm: async () => {
+        try {
+          const newPassword = await resetAdminPassword(adminId);
+          showNotification(notificationHelpers.success(
+            'Password Reset',
+            `Password reset successfully! New temporary password: ${newPassword}`
+          ));
+        } catch (error) {
+          console.error('Error resetting password:', error);
+          showNotification(notificationHelpers.error(
+            'Reset Failed',
+            'Failed to reset password. Please try again.'
+          ));
+        }
+      }
+    });
   };
 
   // Form management functions
@@ -421,15 +484,12 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ user, onLogou
   const handleCreateTenant = async () => {
     try {
       if (!newTenant.name || !newTenant.subdomain) {
-        alert('Please fill in all required fields (Company Name and Subdomain)');
+        showNotification(notificationHelpers.error(
+          'Validation Error',
+          'Please fill in all required fields (Company Name and Subdomain)'
+        ));
         return;
       }
-
-      // Temporarily bypass subdomain validation
-      // if (subdomainCheckStatus !== 'available') {
-      //   alert('Please enter a valid and available subdomain');
-      //   return;
-      // }
 
       const tenantData: Omit<Tenant, 'id' | 'createdAt' | 'updatedAt'> = {
         name: newTenant.name!,
@@ -457,10 +517,17 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ user, onLogou
       setEditingTenant(null);
       setViewingTenant(null);
       resetForm();
+      showNotification(notificationHelpers.success(
+        'Tenant Created',
+        `Tenant "${tenantData.name}" created successfully!`
+      ));
     } catch (error) {
       console.error('Error creating tenant:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to create tenant. Please check all fields and try again.';
-      alert(`Failed to create tenant: ${errorMessage}`);
+      showNotification(notificationHelpers.error(
+        'Failed to Create Tenant',
+        errorMessage
+      ));
     }
   };
 
@@ -474,26 +541,50 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ user, onLogou
       setViewingTenant(null);
       setShowCompanyModal(false);
       resetForm();
+      showNotification(notificationHelpers.success(
+        'Tenant Updated',
+        `Tenant "${updatedTenant.name}" updated successfully!`
+      ));
     } catch (error) {
       console.error('Error updating tenant:', error);
-      alert('Failed to update tenant');
+      showNotification(notificationHelpers.error(
+        'Update Failed',
+        'Failed to update tenant. Please try again.'
+      ));
     }
   };
 
   const handleDeleteTenant = async (tenantId: string) => {
-    if (!confirm('Are you sure you want to delete this tenant?')) return;
+    const tenant = tenants.find(t => t.id === tenantId);
+    if (!tenant) return;
 
-    try {
-      await deleteTenant(tenantId);
-      setTenants(tenants.filter(t => t.id !== tenantId));
-      setViewingTenant(null);
-      setEditingTenant(null);
-      setShowCompanyModal(false);
-      resetForm();
-    } catch (error) {
-      console.error('Error deleting tenant:', error);
-      alert('Failed to delete tenant');
-    }
+    showConfirmation({
+      title: 'Delete Tenant',
+      message: `Are you sure you want to delete tenant "${tenant.name}"? This will permanently remove all tenant data and cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          await deleteTenant(tenantId);
+          setTenants(tenants.filter(t => t.id !== tenantId));
+          setViewingTenant(null);
+          setEditingTenant(null);
+          setShowCompanyModal(false);
+          resetForm();
+          showNotification(notificationHelpers.success(
+            'Tenant Deleted',
+            `Tenant "${tenant.name}" has been deleted successfully.`
+          ));
+        } catch (error) {
+          console.error('Error deleting tenant:', error);
+          showNotification(notificationHelpers.error(
+            'Delete Failed',
+            'Failed to delete tenant. Please try again.'
+          ));
+        }
+      }
+    });
   };
 
   const menuItems = [
@@ -693,7 +784,10 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ user, onLogou
                   onClick={() => {
                     const fullUrl = getDomainConfig().getFullSubdomainUrl(tenant.subdomain);
                     navigator.clipboard.writeText(fullUrl);
-                    alert(`Copied to clipboard: ${fullUrl}`);
+                    showNotification(notificationHelpers.success(
+                      'URL Copied',
+                      `Subdomain URL copied to clipboard!`
+                    ));
                   }}
                   className="bg-blue-50 hover:bg-blue-100 text-blue-600 px-3 py-2 rounded-lg flex items-center justify-center"
                   title="Copy subdomain URL"
@@ -1232,7 +1326,10 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ user, onLogou
                     <button
                       onClick={() => {
                         copyToClipboard(getDomainConfig().getFullSubdomainUrl(viewingTenant.subdomain));
-                        alert('Subdomain URL copied to clipboard!');
+                        showNotification(notificationHelpers.success(
+                          'URL Copied',
+                          'Subdomain URL copied to clipboard!'
+                        ));
                       }}
                       className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                       title="Copy subdomain URL"

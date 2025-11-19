@@ -4,6 +4,7 @@ import { UserPlus, UserMinus, Users } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { TeamWithDetails } from '../../../services/teamService';
 import { useProducts } from '../../../hooks/useProducts';
+import { useNotification, notificationHelpers } from '../../shared/Notification';
 
 interface SimpleTelecaller {
   id: string;
@@ -24,6 +25,7 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
   onTeamUpdated,
   team
 }) => {
+  const { showNotification } = useNotification();
   const { products } = useProducts();
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingTelecallers, setIsLoadingTelecallers] = useState(false);
@@ -92,12 +94,18 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
     e.preventDefault();
     
     if (!teamName.trim() || !selectedProduct) {
-      alert('Please fill in all required fields');
+      showNotification(notificationHelpers.error(
+        'Validation Error',
+        'Please fill in all required fields'
+      ));
       return;
     }
 
     if (!tenant?.id || !team?.id) {
-      alert('Required information not found');
+      showNotification(notificationHelpers.error(
+        'Error',
+        'Required information not found'
+      ));
       return;
     }
 
@@ -138,12 +146,18 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
         }
       }
 
-      alert('Team updated successfully!');
+      showNotification(notificationHelpers.success(
+        'Team Updated',
+        'Team updated successfully!'
+      ));
       onTeamUpdated();
       onClose();
     } catch (error) {
       console.error('Error updating team:', error);
-      alert('Failed to update team. Please try again.');
+      showNotification(notificationHelpers.error(
+        'Update Failed',
+        'Failed to update team. Please try again.'
+      ));
     } finally {
       setIsLoading(false);
     }
