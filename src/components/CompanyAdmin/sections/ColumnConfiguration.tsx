@@ -15,7 +15,11 @@ interface LocalColumn {
   isCustom?: boolean;
 }
 
-export const ColumnConfiguration: React.FC = () => {
+interface ColumnConfigurationProps {
+  user: any;
+}
+
+export const ColumnConfiguration: React.FC<ColumnConfigurationProps> = ({ user }) => {
   const { products, selectedProduct, setSelectedProduct, addProduct, deleteProduct } = useProducts();
   const { showNotification } = useNotification();
   const { showConfirmation } = useConfirmation();
@@ -48,16 +52,16 @@ export const ColumnConfiguration: React.FC = () => {
 
   // Load columns when product changes
   useEffect(() => {
-    if (selectedProduct && tenant?.id) {
+    if (selectedProduct && user?.tenantId) {
       const loadProductColumns = async () => {
         try {
           setIsLoading(true);
-          const configs = await columnConfigService.getColumnConfigurations(user.tenantId, selectedProduct);
+          const configs = await columnConfigService.getColumnConfigurations(user?.tenantId, selectedProduct);
 
           if (configs.length === 0) {
             // Initialize default columns if none exist
-            await columnConfigService.initializeDefaultColumns(user.tenantId, selectedProduct);
-            const newConfigs = await columnConfigService.getColumnConfigurations(user.tenantId, selectedProduct);
+            await columnConfigService.initializeDefaultColumns(user?.tenantId, selectedProduct);
+            const newConfigs = await columnConfigService.getColumnConfigurations(user?.tenantId, selectedProduct);
             setColumns(newConfigs.filter(c => !c.is_custom).map((c, idx) => ({
               id: idx + 1,
               columnName: c.column_name,
@@ -97,7 +101,7 @@ export const ColumnConfiguration: React.FC = () => {
 
       loadProductColumns();
     }
-  }, [selectedProduct, tenant?.id]);
+  }, [selectedProduct, user?.tenantId]);
 
   const handleColumnToggle = (columnId: string | number, isActive: boolean, isCustom: boolean = false) => {
     if (isCustom) {
@@ -173,7 +177,7 @@ export const ColumnConfiguration: React.FC = () => {
   };
 
   const handleSaveConfiguration = async () => {
-    if (!selectedProduct || !tenant?.id) return;
+    if (!selectedProduct || !user?.tenantId) return;
 
     try {
       setIsLoading(true);
@@ -196,7 +200,7 @@ export const ColumnConfiguration: React.FC = () => {
         }))
       ];
 
-      await columnConfigService.saveColumnConfigurations(user.tenantId, selectedProduct, allColumns);
+      await columnConfigService.saveColumnConfigurations(user?.tenantId, selectedProduct, allColumns);
       showNotification(notificationHelpers.success(
         'Configuration Saved',
         'Column configuration saved successfully!'
@@ -213,7 +217,7 @@ export const ColumnConfiguration: React.FC = () => {
   };
 
   const handleAddCompany = async (companyName: string) => {
-    if (!tenant?.id) {
+    if (!user?.tenantId) {
       showNotification(notificationHelpers.error(
         'Error',
         'Tenant not found. Please refresh the page.'
@@ -223,7 +227,7 @@ export const ColumnConfiguration: React.FC = () => {
 
     if (companyName && companyName.trim()) {
       try {
-        await addProduct(companyName.trim(), user.tenantId);
+        await addProduct(companyName.trim(), user?.tenantId);
         showNotification(notificationHelpers.success(
           'Company Added',
           `Company "${companyName}" added successfully!`
@@ -244,7 +248,7 @@ export const ColumnConfiguration: React.FC = () => {
   };
 
   const executeClearAllColumnData = async () => {
-    if (!tenant?.id) {
+    if (!user?.tenantId) {
       showNotification(notificationHelpers.error(
         'Error',
         'Tenant not found. Please refresh the page.'
@@ -254,7 +258,7 @@ export const ColumnConfiguration: React.FC = () => {
 
     try {
       setIsLoading(true);
-      await columnConfigService.clearAllColumnConfigurations(user.tenantId);
+      await columnConfigService.clearAllColumnConfigurations(user?.tenantId);
       
       // Reset local state
       setColumns([
@@ -293,7 +297,7 @@ export const ColumnConfiguration: React.FC = () => {
   };
 
   const handleClearAllColumnData = async () => {
-    if (!tenant?.id) {
+    if (!user?.tenantId) {
       showNotification(notificationHelpers.error(
         'Error',
         'Tenant not found. Please refresh the page.'
@@ -376,7 +380,7 @@ export const ColumnConfiguration: React.FC = () => {
              </button>
              <button
                onClick={async () => {
-                 if (!tenant?.id) {
+                 if (!user?.tenantId) {
                    showNotification(notificationHelpers.error(
                      'Error',
                      'Tenant not found. Please refresh the page.'
@@ -392,7 +396,7 @@ export const ColumnConfiguration: React.FC = () => {
                    type: 'danger',
                    onConfirm: async () => {
                      try {
-                       await deleteProduct(selectedProduct, user.tenantId);
+                       await deleteProduct(selectedProduct, user?.tenantId);
                        showNotification(notificationHelpers.success(
                          'Product Deleted',
                          `Product "${selectedProduct}" deleted successfully!`

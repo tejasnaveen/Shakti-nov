@@ -17,7 +17,7 @@ interface CreateTeamProps {
 export const CreateTeam: React.FC<CreateTeamProps> = ({ isOpen, onClose, onTeamCreated }) => {
   const { showNotification } = useNotification();
   const { user } = useAuth();
-  const { createTeam } = useTeams(tenant?.id);
+  const { createTeam } = useTeams(user?.tenantId);
   const { products } = useProducts();
   const [teamName, setTeamName] = useState('');
   const [selectedTelecallers, setSelectedTelecallers] = useState<string[]>([]);
@@ -30,14 +30,14 @@ export const CreateTeam: React.FC<CreateTeamProps> = ({ isOpen, onClose, onTeamC
     if (isOpen) {
       loadAvailableTelecallers();
     }
-  }, [isOpen, tenant?.id]);
+  }, [isOpen, user?.tenantId]);
 
   const loadAvailableTelecallers = async () => {
-    if (!tenant?.id) return;
+    if (!user?.tenantId) return;
     
     try {
       setIsLoading(true);
-      const telecallerList = await TeamService.getAvailableTelecallers(user.tenantId);
+      const telecallerList = await TeamService.getAvailableTelecallers(user?.tenantId);
       setTelecallers(telecallerList);
     } catch (error) {
       console.error('Error loading telecallers:', error);
@@ -60,7 +60,7 @@ export const CreateTeam: React.FC<CreateTeamProps> = ({ isOpen, onClose, onTeamC
     console.log('Form submission data:', {
       teamName: teamName.trim(),
       selectedColumn: selectedColumn,
-      tenantId: tenant?.id,
+      tenantId: user?.tenantId,
       userId: user?.id,
       selectedTelecallers: selectedTelecallers
     });
@@ -73,7 +73,7 @@ export const CreateTeam: React.FC<CreateTeamProps> = ({ isOpen, onClose, onTeamC
       return;
     }
 
-    if (!tenant?.id || !user?.id) {
+    if (!user?.tenantId || !user?.id) {
       showNotification(notificationHelpers.error(
         'Error',
         'User or tenant information not found'

@@ -163,59 +163,6 @@ export const CompanyAdminDashboard: React.FC<CompanyAdminDashboardProps> = ({ us
     { name: 'Settings', icon: Settings, active: activeSection === 'company', onClick: () => setActiveSection('company') },
   ];
 
-  // Handle tenant loading and errors
-  if (tenantLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading tenant information...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (tenantError) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="bg-white p-8 rounded-lg shadow-md text-center max-w-md">
-          <h2 className="text-xl font-bold text-red-600 mb-4">Tenant Error</h2>
-          <p className="text-gray-600 mb-4">{tenantError}</p>
-          <div className="space-y-2">
-            <button
-              onClick={() => window.location.reload()}
-              className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-2"
-            >
-              Retry
-            </button>
-            <button
-              onClick={onLogout}
-              className="w-full bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!tenant) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="bg-white p-8 rounded-lg shadow-md text-center">
-          <h2 className="text-xl font-bold text-red-600 mb-4">Tenant Not Found</h2>
-          <p className="text-gray-600 mb-4">Unable to load tenant information. Please check your subdomain.</p>
-          <button
-            onClick={onLogout}
-            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-          >
-            Logout
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   const renderContent = () => {
     switch (activeSection) {
@@ -252,7 +199,7 @@ export const CompanyAdminDashboard: React.FC<CompanyAdminDashboardProps> = ({ us
       case 'reports':
         return <ReportsSection />;
       case 'columns':
-        return <ColumnConfiguration />;
+        return <ColumnConfiguration user={user} />;
       default:
         return (
           <DashboardOverview
@@ -270,7 +217,7 @@ export const CompanyAdminDashboard: React.FC<CompanyAdminDashboardProps> = ({ us
       user={user}
       onLogout={onLogout}
       menuItems={menuItems}
-      title={`${tenant?.name || 'Shakti'} - Company Admin`}
+      title="Shakti - Company Admin"
       roleColor="bg-blue-500"
     >
       {renderContent()}

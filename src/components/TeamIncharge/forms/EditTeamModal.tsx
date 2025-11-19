@@ -5,6 +5,7 @@ import { supabase } from '../../../lib/supabase';
 import { TeamWithDetails } from '../../../services/teamService';
 import { useProducts } from '../../../hooks/useProducts';
 import { useNotification, notificationHelpers } from '../../shared/Notification';
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface SimpleTelecaller {
   id: string;
@@ -25,6 +26,7 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
   onTeamUpdated,
   team
 }) => {
+  const { user } = useAuth();
   const { showNotification } = useNotification();
   const { products } = useProducts();
   const [isLoading, setIsLoading] = useState(false);
@@ -37,7 +39,7 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
   const [selectedTelecallerIds, setSelectedTelecallerIds] = useState<string[]>([]);
 
   useEffect(() => {
-    if (team && tenant?.id) {
+    if (team && user?.tenantId) {
       setTeamName(team.name || '');
       setSelectedProduct(team.product_name || '');
       setTeamStatus(team.status || 'active');
@@ -51,17 +53,17 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
       // Load available telecallers
       loadAvailableTelecallers();
     }
-  }, [team, tenant?.id]);
+  }, [team, user?.tenantId]);
 
   const loadAvailableTelecallers = async () => {
-    if (!tenant?.id || !team?.id) return;
+    if (!user?.tenantId || !team?.id) return;
     
     try {
       setIsLoadingTelecallers(true);
       const { data: telecallers, error } = await supabase
         .from('employees')
         .select('id, name, emp_id')
-        .eq('tenant_id', user.tenantId)
+        .eq('tenant_id', user?.tenantId)
         .eq('role', 'Telecaller')
         .eq('status', 'active')
         .or(`team_id.is.null,team_id.eq.${team.id}`)
@@ -101,7 +103,7 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
       return;
     }
 
-    if (!tenant?.id || !team?.id) {
+    if (!user?.tenantId || !team?.id) {
       showNotification(notificationHelpers.error(
         'Error',
         'Required information not found'
@@ -122,7 +124,7 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
           updated_at: new Date().toISOString()
         })
         .eq('id', team.id)
-        .eq('tenant_id', user.tenantId);
+        .eq('tenant_id', user?.tenantId);
 
       if (teamError) throw teamError;
 

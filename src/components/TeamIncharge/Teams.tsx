@@ -6,8 +6,10 @@ import { Modal } from '../shared/Modal';
 import { TeamService, TeamWithDetails } from '../../services/teamService';
 import { useConfirmation } from '../../contexts/ConfirmationContext';
 import { useNotification, notificationHelpers } from '../shared/Notification';
+import { useAuth } from '../../contexts/AuthContext';
 
 export const Teams: React.FC = () => {
+  const { user } = useAuth();
   const { showConfirmation } = useConfirmation();
   const { showNotification } = useNotification();
   const [teams, setTeams] = useState<TeamWithDetails[]>([]);
@@ -18,20 +20,20 @@ export const Teams: React.FC = () => {
   const [selectedTeam, setSelectedTeam] = useState<TeamWithDetails | null>(null);
 
   useEffect(() => {
-    if (tenant?.id) {
+    if (user?.tenantId) {
       loadTeams();
     }
-  }, [tenant?.id]);
+  }, [user?.tenantId]);
 
   const loadTeams = async () => {
-    if (!tenant?.id) {
+    if (!user?.tenantId) {
       console.warn('Tenant ID not available, cannot load teams');
       return;
     }
 
     try {
       setIsLoading(true);
-      const teamsData = await TeamService.getTeams(user.tenantId);
+      const teamsData = await TeamService.getTeams(user?.tenantId);
       setTeams(teamsData);
     } catch (error) {
       console.error('Error loading teams:', error);
