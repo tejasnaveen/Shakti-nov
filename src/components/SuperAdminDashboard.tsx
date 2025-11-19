@@ -833,7 +833,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ user, onLogou
                   View
                 </button>
                 <button
-                  onClick={() => handleDeleteTenant(user.tenantId)}
+                  onClick={() => handleDeleteTenant(tenant.id)}
                   className="flex-1 bg-red-100 hover:bg-red-200 text-red-700 px-3 py-2 rounded-lg flex items-center justify-center"
                 >
                   <Trash2 className="w-4 h-4 mr-1" />
