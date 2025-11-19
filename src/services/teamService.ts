@@ -162,16 +162,28 @@ export class TeamService {
       .from(TEAM_TABLE)
       .select(`
         *,
-        team_incharge:employees(id, name, emp_id)
+        team_incharge:employees!team_incharge_id(id, name, emp_id)
       `)
       .eq('tenant_id', tenantId)
       .order('created_at', { ascending: false });
 
-    if (teamsError) throw teamsError;
+    if (teamsError) {
+      console.error('Error fetching teams:', teamsError);
+      throw teamsError;
+    }
+
+    if (!teamsData || teamsData.length === 0) {
+      console.log('No teams found for tenant:', tenantId);
+      return [];
+    }
+
+    console.log('Fetched teams:', teamsData);
 
     // Then get telecallers for each team
     const teamsWithTelecallers = await Promise.all(
       teamsData.map(async (team) => {
+        console.log('Fetching telecallers for team:', team.id, team.name);
+
         const { data: telecallers, error: telecallersError } = await supabase
           .from(EMPLOYEE_TABLE)
           .select('id, name, emp_id')
@@ -180,8 +192,10 @@ export class TeamService {
 
         if (telecallersError) {
           console.error('Error fetching telecallers for team:', team.id, telecallersError);
-          return { ...team, telecallers: [] };
+          return { ...team, telecallers: [], total_cases: 0 };
         }
+
+        console.log(`Found ${telecallers?.length || 0} telecallers for team ${team.name}`);
 
         const telecallerIds = telecallers?.map((t: any) => t.id) || [];
         let totalCases = 0;
@@ -206,6 +220,7 @@ export class TeamService {
       })
     );
 
+    console.log('Returning teams with details:', teamsWithTelecallers);
     return teamsWithTelecallers;
   }
 

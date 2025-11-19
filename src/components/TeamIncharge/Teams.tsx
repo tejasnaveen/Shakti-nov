@@ -33,11 +33,16 @@ export const Teams: React.FC = () => {
 
     try {
       setIsLoading(true);
-      const teamsData = await TeamService.getTeams(user?.tenantId);
+      console.log('Loading teams for tenant:', user.tenantId);
+      const teamsData = await TeamService.getTeams(user.tenantId);
+      console.log('Teams loaded successfully:', teamsData.length, 'teams');
       setTeams(teamsData);
     } catch (error) {
       console.error('Error loading teams:', error);
-      // Set empty array instead of failing silently
+      showNotification(notificationHelpers.error(
+        'Failed to Load Teams',
+        error instanceof Error ? error.message : 'Unknown error occurred'
+      ));
       setTeams([]);
     } finally {
       setIsLoading(false);
