@@ -37,22 +37,30 @@ export const CaseManagement: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (tenant?.id && user?.id) {
+    if (user?.tenantId && user?.id) {
       loadDashboardStats();
     }
-  }, [tenant?.id, user?.id]);
+  }, [user?.tenantId, user?.id]);
 
   const loadDashboardStats = async () => {
-    if (!tenant?.id || !user?.id) return;
+    if (!user?.tenantId || !user?.id) {
+      console.warn('Tenant ID or User ID not available');
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
+      console.log('Loading case management dashboard for user:', user.id, 'tenant:', user.tenantId);
 
       // Get teams for this team incharge
       const teamData = await TeamService.getTeams(user.tenantId);
-      const userTeams = teamData.filter(team => 
+      console.log('Total teams loaded:', teamData.length);
+
+      const userTeams = teamData.filter(team =>
         team.team_incharge_id === user.id && team.status === 'active'
       );
+      console.log('User teams (in-charge and active):', userTeams.length);
 
       // Calculate stats
       const totalTeams = userTeams.length;
@@ -66,13 +74,30 @@ export const CaseManagement: React.FC = () => {
       let closedCases = 0;
 
       for (const team of userTeams) {
-        const teamCases = await customerCaseService.getTeamCases(user.tenantId, team.id);
-        totalCases += teamCases.length;
-        unassignedCases += teamCases.filter(c => !c.telecaller_id).length;
-        assignedCases += teamCases.filter(c => c.status === 'assigned').length;
-        inProgressCases += teamCases.filter(c => c.status === 'in_progress').length;
-        closedCases += teamCases.filter(c => c.status === 'closed').length;
+        console.log(`Loading cases for team: ${team.name} (${team.id})`);
+        try {
+          const teamCases = await customerCaseService.getTeamCases(user.tenantId, team.id);
+          console.log(`Found ${teamCases.length} cases for team ${team.name}`);
+
+          totalCases += teamCases.length;
+          unassignedCases += teamCases.filter(c => !c.telecaller_id).length;
+          assignedCases += teamCases.filter(c => c.status === 'assigned').length;
+          inProgressCases += teamCases.filter(c => c.status === 'in_progress').length;
+          closedCases += teamCases.filter(c => c.status === 'closed').length;
+        } catch (teamError) {
+          console.error(`Error loading cases for team ${team.name}:`, teamError);
+        }
       }
+
+      console.log('Dashboard stats calculated:', {
+        totalTeams,
+        totalTelecallers,
+        totalCases,
+        unassignedCases,
+        assignedCases,
+        inProgressCases,
+        closedCases
+      });
 
       setDashboardStats({
         totalTeams,
@@ -85,6 +110,15 @@ export const CaseManagement: React.FC = () => {
       });
     } catch (error) {
       console.error('Error loading dashboard stats:', error);
+      setDashboardStats({
+        totalTeams: 0,
+        totalTelecallers: 0,
+        totalCases: 0,
+        unassignedCases: 0,
+        assignedCases: 0,
+        inProgressCases: 0,
+        closedCases: 0
+      });
     } finally {
       setIsLoading(false);
     }
