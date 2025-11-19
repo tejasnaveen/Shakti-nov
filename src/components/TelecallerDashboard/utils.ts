@@ -83,9 +83,9 @@ export const filterCases = (
 
   const term = searchTerm.toLowerCase();
   return cases.filter(case_ =>
-    case_.customerName.toLowerCase().includes(term) ||
-    case_.loanId.toLowerCase().includes(term) ||
-    case_.mobileNo.includes(searchTerm)
+    (case_.customerName || '').toLowerCase().includes(term) ||
+    (case_.loanId || '').toLowerCase().includes(term) ||
+    (case_.mobileNo || '').includes(searchTerm)
   );
 };
 

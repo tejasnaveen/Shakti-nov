@@ -66,15 +66,16 @@ const CustomerCaseTable: React.FC<CustomerCaseTableProps> = ({
     switch (column.columnName) {
       case 'dpd':
         return (
-          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getDPDColor(case_.dpd)}`}>
-            {case_.dpd} days
+          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getDPDColor(case_.dpd || 0)}`}>
+            {case_.dpd || 0} days
           </span>
         );
       case 'paymentLink':
         return (
           <button
-            onClick={() => copyToClipboard(case_.paymentLink)}
-            className="inline-flex items-center px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs font-medium rounded transition-colors"
+            onClick={() => copyToClipboard(case_.paymentLink || '')}
+            disabled={!case_.paymentLink}
+            className="inline-flex items-center px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs font-medium rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Copy className="w-3 h-3 mr-1" />
             Copy Link
@@ -238,19 +239,34 @@ const CustomerCaseTable: React.FC<CustomerCaseTableProps> = ({
               >
                 Previous
               </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`px-3 py-2 rounded-md text-sm font-medium ${
-                    currentPage === page
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-gray-300 hover:bg-gray-400 text-gray-700'
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
+              {(() => {
+                const maxPagesToShow = 5;
+                let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+                let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+
+                if (endPage - startPage < maxPagesToShow - 1) {
+                  startPage = Math.max(1, endPage - maxPagesToShow + 1);
+                }
+
+                const pages = [];
+                for (let i = startPage; i <= endPage; i++) {
+                  pages.push(i);
+                }
+
+                return pages.map(page => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-3 py-2 rounded-md text-sm font-medium ${
+                      currentPage === page
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-gray-300 hover:bg-gray-400 text-gray-700'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ));
+              })()}
               <button
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
