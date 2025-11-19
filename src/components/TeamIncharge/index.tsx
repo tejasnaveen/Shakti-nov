@@ -45,7 +45,7 @@ export const TeamInchargeDashboard: React.FC<TeamInchargeDashboardProps> = ({ us
       user={user}
       onLogout={onLogout}
       menuItems={menuItems}
-      title={`${tenant?.name || 'Shakti'} - Team Incharge`}
+      title="Shakti - Team Incharge"
       roleColor="bg-green-500"
     >
       {renderContent()}

@@ -97,10 +97,10 @@ export const TelecallerDashboard: React.FC<TelecallerDashboardProps> = ({ user, 
 
   // Load basic dashboard data
   useEffect(() => {
-    if (tenant?.id && user?.id) {
+    if (user?.id) {
       loadDashboardData();
     }
-  }, [tenant?.id, user?.id, user?.empId]);
+  }, [user?.id, user?.empId]);
 
   // Performance data is now static to match the desired design
 
@@ -203,7 +203,7 @@ export const TelecallerDashboard: React.FC<TelecallerDashboardProps> = ({ user, 
                 <Phone className="w-4 h-4 lg:w-5 lg:h-5 text-white" />
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="text-sm lg:text-base font-semibold text-black truncate">{`${tenant?.name || 'Shakti'} - Telecaller`}</h2>
+                <h2 className="text-sm lg:text-base font-semibold text-black truncate">Shakti - Telecaller</h2>
                 <p className="text-xs text-gray-700 hidden sm:block">Tenant Dashboard</p>
               </div>
             </div>
