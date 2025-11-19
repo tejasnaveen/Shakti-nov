@@ -22,8 +22,8 @@ import {
   Upload
 } from 'lucide-react';
 import { customerCaseService, CustomerCase } from '../../services/customerCaseService';
-import { CasesView } from '../TeamIncharge/views/CasesView';
 import { useNotification, notificationHelpers } from '../shared/Notification';
+import CustomerCaseTable from './CustomerCaseTable';
 import { CallsPerformanceCard } from './CallsPerformanceCard';
 import { CollectionsSummaryCard } from './CollectionsSummaryCard';
 import { CasesStatusOverviewCard } from './CasesStatusOverviewCard';
@@ -77,7 +77,7 @@ export const TelecallerDashboard: React.FC<TelecallerDashboardProps> = ({ user, 
   ];
 
   const [customerCases, setCustomerCases] = useState<CustomerCase[]>([]);
-  const [, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [metrics, setMetrics] = useState({
     assignedCases: 0,
     callsToday: 0,
@@ -297,7 +297,37 @@ export const TelecallerDashboard: React.FC<TelecallerDashboardProps> = ({ user, 
             )}
 
             {activeSection === 'cases' && (
-              <CasesView user={user} />
+              <div className="space-y-6">
+                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">My Cases</h3>
+                  <CustomerCaseTable
+                    customerCases={customerCases}
+                    columnConfigs={[]}
+                    isLoading={isLoading}
+                    onViewDetails={(caseData) => {
+                      console.log('View case details:', caseData);
+                      showNotification(notificationHelpers.info(
+                        'Case Details',
+                        `Viewing case: ${caseData.loan_id || 'N/A'}`
+                      ));
+                    }}
+                    onCallCustomer={(caseData) => {
+                      console.log('Call customer:', caseData);
+                      showNotification(notificationHelpers.info(
+                        'Call Customer',
+                        `Calling: ${caseData.customer_name || 'N/A'}`
+                      ));
+                    }}
+                    onUpdateStatus={(caseData) => {
+                      console.log('Update status:', caseData);
+                      showNotification(notificationHelpers.success(
+                        'Status Updated',
+                        `Case ${caseData.loan_id || 'N/A'} status updated`
+                      ));
+                    }}
+                  />
+                </div>
+              </div>
             )}
 
             {activeSection === 'reports' && (
