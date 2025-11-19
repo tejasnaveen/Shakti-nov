@@ -18,7 +18,7 @@ export const CreateTeam: React.FC<CreateTeamProps> = ({ isOpen, onClose, onTeamC
   const { showNotification } = useNotification();
   const { user } = useAuth();
   const { createTeam } = useTeams(user?.tenantId);
-  const { products } = useProducts();
+  const { products, isLoading: productsLoading } = useProducts(user?.tenantId);
   const [teamName, setTeamName] = useState('');
   const [selectedTelecallers, setSelectedTelecallers] = useState<string[]>([]);
   const [selectedColumn, setSelectedColumn] = useState('');
@@ -216,15 +216,23 @@ export const CreateTeam: React.FC<CreateTeamProps> = ({ isOpen, onClose, onTeamC
             value={selectedColumn}
             onChange={(e) => setSelectedColumn(e.target.value)}
             required
-            className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+            disabled={productsLoading}
+            className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
           >
-            <option value="">Select Product</option>
+            <option value="">
+              {productsLoading ? 'Loading products...' : products.length === 0 ? 'No products available' : 'Select Product'}
+            </option>
             {products.map((product) => (
               <option key={product} value={product}>
                 {product}
               </option>
             ))}
           </select>
+          {products.length === 0 && !productsLoading && (
+            <p className="text-xs text-orange-600 mt-1">
+              No products found. Please add products in Product Management first.
+            </p>
+          )}
         </div>
 
         {/* Telecaller Selection */}
