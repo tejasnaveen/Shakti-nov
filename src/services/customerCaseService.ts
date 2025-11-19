@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { CUSTOMER_CASE_TABLE, CASE_CALL_LOG_TABLE, EMPLOYEE_TABLE } from '../models';
 import type { 
   TeamInchargeCase, 
   CaseUploadResult, 
@@ -61,7 +62,7 @@ export interface CallLog {
 export const customerCaseService = {
   async getCasesByEmployee(tenantId: string, employeeId: string): Promise<CustomerCase[]> {
     const { data, error } = await supabase
-      .from('customer_cases')
+      .from(CUSTOMER_CASE_TABLE)
       .select('*')
       .eq('tenant_id', tenantId)
       .eq('assigned_employee_id', employeeId)
@@ -79,7 +80,7 @@ export const customerCaseService = {
     try {
       // First, find the employee by EMPID
       const { data: employee, error: employeeError } = await supabase
-        .from('employees')
+        .from(EMPLOYEE_TABLE)
         .select('id')
         .eq('tenant_id', tenantId)
         .eq('emp_id', empId)
@@ -100,7 +101,7 @@ export const customerCaseService = {
 
       // Then fetch cases assigned to this telecaller
       const { data, error } = await supabase
-        .from('customer_cases')
+        .from(CUSTOMER_CASE_TABLE)
         .select('*')
         .eq('tenant_id', tenantId)
         .eq('telecaller_id', employee.id)
@@ -120,7 +121,7 @@ export const customerCaseService = {
 
   async getAllCases(tenantId: string): Promise<CustomerCase[]> {
     const { data, error } = await supabase
-      .from('customer_cases')
+      .from(CUSTOMER_CASE_TABLE)
       .select('*')
       .eq('tenant_id', tenantId)
       .order('created_at', { ascending: false });
@@ -135,7 +136,7 @@ export const customerCaseService = {
 
   async createCase(caseData: Omit<CustomerCase, 'id' | 'created_at' | 'updated_at'>): Promise<CustomerCase> {
     const { data, error } = await supabase
-      .from('customer_cases')
+      .from(CUSTOMER_CASE_TABLE)
       .insert([caseData])
       .select()
       .single();
@@ -150,7 +151,7 @@ export const customerCaseService = {
 
   async bulkCreateCases(cases: Omit<CustomerCase, 'id' | 'created_at' | 'updated_at'>[]): Promise<void> {
     const { error } = await supabase
-      .from('customer_cases')
+      .from(CUSTOMER_CASE_TABLE)
       .insert(cases);
 
     if (error) {
@@ -161,7 +162,7 @@ export const customerCaseService = {
 
   async updateCase(caseId: string, updates: Partial<CustomerCase>): Promise<CustomerCase> {
     const { data, error } = await supabase
-      .from('customer_cases')
+      .from(CUSTOMER_CASE_TABLE)
       .update(updates)
       .eq('id', caseId)
       .select()
@@ -177,7 +178,7 @@ export const customerCaseService = {
 
   async deleteCase(caseId: string): Promise<void> {
     const { error } = await supabase
-      .from('customer_cases')
+      .from(CUSTOMER_CASE_TABLE)
       .delete()
       .eq('id', caseId);
 
@@ -189,7 +190,7 @@ export const customerCaseService = {
 
   async addCallLog(callLog: Omit<CallLog, 'id' | 'created_at'>): Promise<CallLog> {
     const { data, error } = await supabase
-      .from('case_call_logs')
+      .from(CASE_CALL_LOG_TABLE)
       .insert([callLog])
       .select()
       .single();
@@ -204,7 +205,7 @@ export const customerCaseService = {
 
   async getCallLogsByCase(caseId: string): Promise<CallLog[]> {
     const { data, error } = await supabase
-      .from('case_call_logs')
+      .from(CASE_CALL_LOG_TABLE)
       .select('*')
       .eq('case_id', caseId)
       .order('created_at', { ascending: false });
@@ -232,7 +233,7 @@ export const customerCaseService = {
   // Team Incharge specific methods
   async getTeamCases(tenantId: string, teamId: string): Promise<TeamInchargeCase[]> {
     const { data, error } = await supabase
-      .from('customer_cases')
+      .from(CUSTOMER_CASE_TABLE)
       .select(`
         *,
         telecaller:employees!telecaller_id(
@@ -255,7 +256,7 @@ export const customerCaseService = {
 
   async getUnassignedTeamCases(tenantId: string, teamId: string): Promise<TeamInchargeCase[]> {
     const { data, error } = await supabase
-      .from('customer_cases')
+      .from(CUSTOMER_CASE_TABLE)
       .select('*')
       .eq('tenant_id', tenantId)
       .eq('team_id', teamId)
@@ -274,7 +275,7 @@ export const customerCaseService = {
     console.log('Getting cases with filters:', filters);
     
     let query = supabase
-      .from('customer_cases')
+      .from(CUSTOMER_CASE_TABLE)
       .select(`
         *,
         telecaller:employees!telecaller_id(
@@ -326,7 +327,7 @@ export const customerCaseService = {
     // Get all telecallers for auto-assignment lookup
     const telecallerMap = new Map<string, string>();
     const { data: telecallers } = await supabase
-      .from('employees')
+      .from(EMPLOYEE_TABLE)
       .select('id, emp_id')
       .eq('tenant_id', cases[0]?.tenant_id)
       .eq('role', 'Telecaller')
@@ -354,7 +355,7 @@ export const customerCaseService = {
 
         // Insert the case
         const { error } = await supabase
-          .from('customer_cases')
+          .from(CUSTOMER_CASE_TABLE)
           .insert([caseData]);
 
         if (error) {
@@ -399,7 +400,7 @@ export const customerCaseService = {
     }
 
     const { error } = await supabase
-      .from('customer_cases')
+      .from(CUSTOMER_CASE_TABLE)
       .update(updateData)
       .eq('id', caseId);
 
@@ -417,7 +418,7 @@ export const customerCaseService = {
     closed: number;
   }> {
     const { data, error } = await supabase
-      .from('customer_cases')
+      .from(CUSTOMER_CASE_TABLE)
       .select('status')
       .eq('tenant_id', tenantId)
       .eq('telecaller_id', telecallerId);

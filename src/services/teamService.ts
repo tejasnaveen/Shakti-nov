@@ -1,39 +1,13 @@
 import { supabase } from '../lib/supabase';
-
-export interface Team {
-  id: string;
-  tenant_id: string;
-  name: string;
-  team_incharge_id: string;
-  status: string;
-  product_name: string;
-  created_at: string;
-  updated_at: string;
-  created_by?: string;
-}
-
-export interface TeamWithDetails {
-  id: string;
-  tenant_id: string;
-  name: string;
-  team_incharge: {
-    id: string;
-    name: string;
-    emp_id: string;
-  };
-  team_incharge_id: string;
-  product_name: string;
-  telecallers: {
-    id: string;
-    name: string;
-    emp_id: string;
-  }[];
-  total_cases: number;
-  status: 'active' | 'inactive';
-  created_at: string;
-  updated_at: string;
-  created_by?: string;
-}
+import {
+  Team,
+  TeamInsert,
+  TeamUpdate,
+  TeamWithDetails,
+  TEAM_TABLE,
+  Telecaller,
+  TeamIncharge
+} from '../models';
 
 export class TeamService {
   static async createTeam(teamData: {
@@ -61,16 +35,17 @@ export class TeamService {
     }
 
     try {
-      // First create the team
+      const teamInsert: TeamInsert = {
+        tenant_id: teamData.tenant_id,
+        name: teamData.name.trim(),
+        team_incharge_id: teamData.team_incharge_id,
+        product_name: teamData.product_name.trim(),
+        created_by: teamData.created_by || teamData.team_incharge_id
+      };
+
       const { data: team, error: teamError } = await supabase
-        .from('teams')
-        .insert({
-          tenant_id: teamData.tenant_id,
-          name: teamData.name.trim(),
-          team_incharge_id: teamData.team_incharge_id,
-          product_name: teamData.product_name.trim(),
-          created_by: teamData.created_by || teamData.team_incharge_id
-        })
+        .from(TEAM_TABLE)
+        .insert(teamInsert)
         .select()
         .single();
 
@@ -86,7 +61,7 @@ export class TeamService {
         console.log('Updating telecaller assignments:', teamData.telecaller_ids);
         
         const { error: updateError } = await supabase
-          .from('employees')
+          .from(EMPLOYEE_TABLE)
           .update({ team_id: team.id })
           .in('id', teamData.telecaller_ids);
 
@@ -107,9 +82,8 @@ export class TeamService {
   }
 
   static async getTeams(tenantId: string): Promise<TeamWithDetails[]> {
-    // First get teams
     const { data: teamsData, error: teamsError } = await supabase
-      .from('teams')
+      .from(TEAM_TABLE)
       .select(`
         *,
         team_incharge:employees(id, name, emp_id)
@@ -123,7 +97,7 @@ export class TeamService {
     const teamsWithTelecallers = await Promise.all(
       teamsData.map(async (team) => {
         const { data: telecallers, error: telecallersError } = await supabase
-          .from('employees')
+          .from(EMPLOYEE_TABLE)
           .select('id, name, emp_id')
           .eq('tenant_id', tenantId)
           .eq('team_id', team.id);
@@ -166,15 +140,16 @@ export class TeamService {
     telecaller_ids?: string[];
     status?: string;
   }): Promise<Team> {
-    // Update team basic info
+    const teamUpdate: TeamUpdate = {
+      name: updates.name,
+      team_incharge_id: updates.team_incharge_id,
+      product_name: updates.product_name,
+      status: updates.status as 'active' | 'inactive' | undefined
+    };
+
     const { data: team, error: teamError } = await supabase
-      .from('teams')
-      .update({
-        name: updates.name,
-        team_incharge_id: updates.team_incharge_id,
-        product_name: updates.product_name,
-        status: updates.status
-      })
+      .from(TEAM_TABLE)
+      .update(teamUpdate)
       .eq('id', teamId)
       .select()
       .single();
@@ -185,14 +160,14 @@ export class TeamService {
     if (updates.telecaller_ids !== undefined) {
       // First, remove all current assignments for this team
       await supabase
-        .from('employees')
+        .from(EMPLOYEE_TABLE)
         .update({ team_id: null })
         .eq('team_id', teamId);
 
       // Then assign new telecallers
       if (updates.telecaller_ids.length > 0) {
         const { error: updateError } = await supabase
-          .from('employees')
+          .from(EMPLOYEE_TABLE)
           .update({ team_id: teamId })
           .in('id', updates.telecaller_ids);
 
@@ -204,15 +179,8 @@ export class TeamService {
   }
 
   static async deleteTeam(teamId: string): Promise<void> {
-    // Remove team assignments from employees
-    await supabase
-      .from('employees')
-      .update({ team_id: null })
-      .eq('team_id', teamId);
-
-    // Delete the team
     const { error } = await supabase
-      .from('teams')
+      .from(TEAM_TABLE)
       .delete()
       .eq('id', teamId);
 
@@ -221,7 +189,7 @@ export class TeamService {
 
   static async getAvailableTelecallers(tenantId: string, excludeTeamId?: string): Promise<any[]> {
     let query = supabase
-      .from('employees')
+      .from(EMPLOYEE_TABLE)
       .select('id, name, emp_id')
       .eq('tenant_id', tenantId)
       .eq('role', 'Telecaller')
@@ -241,7 +209,7 @@ export class TeamService {
 
   static async getAllTelecallers(tenantId: string): Promise<any[]> {
     const { data, error } = await supabase
-      .from('employees')
+      .from(EMPLOYEE_TABLE)
       .select('id, name, emp_id, team_id')
       .eq('tenant_id', tenantId)
       .eq('role', 'Telecaller')
@@ -254,7 +222,7 @@ export class TeamService {
 
   static async getTeamIncharges(tenantId: string): Promise<any[]> {
     const { data, error } = await supabase
-      .from('employees')
+      .from(EMPLOYEE_TABLE)
       .select('id, name, emp_id')
       .eq('tenant_id', tenantId)
       .eq('role', 'TeamIncharge')
@@ -266,9 +234,8 @@ export class TeamService {
   }
 
   static async toggleTeamStatus(teamId: string): Promise<Team> {
-    // First get current status
     const { data: currentTeam, error: fetchError } = await supabase
-      .from('teams')
+      .from(TEAM_TABLE)
       .select('status')
       .eq('id', teamId)
       .single();
@@ -278,7 +245,7 @@ export class TeamService {
     const newStatus = currentTeam.status === 'active' ? 'inactive' : 'active';
 
     const { data: team, error: updateError } = await supabase
-      .from('teams')
+      .from(TEAM_TABLE)
       .update({ status: newStatus })
       .eq('id', teamId)
       .select()

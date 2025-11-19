@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { COLUMN_CONFIGURATION_TABLE } from '../models';
 
 export interface ColumnConfiguration {
   id?: string;
@@ -15,7 +16,7 @@ export interface ColumnConfiguration {
 export const columnConfigService = {
   async getColumnConfigurations(tenantId: string, productName?: string): Promise<ColumnConfiguration[]> {
     let query = supabase
-      .from('column_configurations')
+      .from(COLUMN_CONFIGURATION_TABLE)
       .select('*')
       .eq('tenant_id', tenantId);
 
@@ -35,7 +36,7 @@ export const columnConfigService = {
 
   async getActiveColumnConfigurations(tenantId: string, productName?: string): Promise<ColumnConfiguration[]> {
     let query = supabase
-      .from('column_configurations')
+      .from(COLUMN_CONFIGURATION_TABLE)
       .select('*')
       .eq('tenant_id', tenantId)
       .eq('is_active', true);
@@ -60,7 +61,7 @@ export const columnConfigService = {
     columns: Omit<ColumnConfiguration, 'id' | 'tenant_id' | 'product_name'>[]
   ): Promise<void> {
     const { error: deleteError } = await supabase
-      .from('column_configurations')
+      .from(COLUMN_CONFIGURATION_TABLE)
       .delete()
       .eq('tenant_id', tenantId)
       .eq('product_name', productName);
@@ -77,7 +78,7 @@ export const columnConfigService = {
     }));
 
     const { error: insertError } = await supabase
-      .from('column_configurations')
+      .from(COLUMN_CONFIGURATION_TABLE)
       .insert(columnsWithTenantId);
 
     if (insertError) {
@@ -118,7 +119,7 @@ export const columnConfigService = {
 
   async deleteProductConfigurations(tenantId: string, productName: string): Promise<void> {
     const { error } = await supabase
-      .from('column_configurations')
+      .from(COLUMN_CONFIGURATION_TABLE)
       .delete()
       .eq('tenant_id', tenantId)
       .eq('product_name', productName);
@@ -131,7 +132,7 @@ export const columnConfigService = {
 
   async clearAllColumnConfigurations(tenantId: string): Promise<void> {
     const { error } = await supabase
-      .from('column_configurations')
+      .from(COLUMN_CONFIGURATION_TABLE)
       .delete()
       .eq('tenant_id', tenantId);
 

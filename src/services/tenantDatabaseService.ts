@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { TENANT_DATABASE_TABLE, COMPANY_ADMIN_TABLE } from '../models';
 import { supabase } from '../lib/supabase';
 
 interface TenantDatabase {
@@ -27,7 +28,7 @@ class TenantDatabaseManager {
 
   async getTenantDatabaseInfo(tenantId: string): Promise<TenantDatabase | null> {
     const { data, error } = await supabase
-      .from('tenant_databases')
+      .from(TENANT_DATABASE_TABLE)
       .select('*')
       .eq('tenant_id', tenantId)
       .maybeSingle();
@@ -92,7 +93,7 @@ class TenantDatabaseManager {
 
   async createTenantDatabase(tenantId: string, databaseUrl: string, databaseName: string, host: string): Promise<TenantDatabase | null> {
     const { data, error } = await supabase
-      .from('tenant_databases')
+      .from(TENANT_DATABASE_TABLE)
       .insert({
         tenant_id: tenantId,
         database_url: databaseUrl,
@@ -127,7 +128,7 @@ class TenantDatabaseManager {
 
   async updateDatabaseStatus(tenantId: string, status: 'healthy' | 'degraded' | 'down'): Promise<void> {
     const { error } = await supabase
-      .from('tenant_databases')
+      .from(TENANT_DATABASE_TABLE)
       .update({
         status,
         last_health_check: new Date().toISOString()
@@ -147,7 +148,7 @@ class TenantDatabaseManager {
     }
 
     try {
-      const { error } = await client.from('company_admins').select('count').limit(1);
+      const { error } = await client.from(COMPANY_ADMIN_TABLE).select('count').limit(1);
       const isHealthy = !error;
       await this.updateDatabaseStatus(tenantId, isHealthy ? 'healthy' : 'degraded');
       return isHealthy;

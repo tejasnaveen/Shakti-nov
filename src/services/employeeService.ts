@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 import bcrypt from 'bcryptjs';
 import type { Employee, CreateEmployeeRequest, UpdateEmployeeRequest } from '../types/employee';
+import { EMPLOYEE_TABLE } from '../models';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 
@@ -8,7 +9,7 @@ export const employeeService = {
   async getEmployees(tenantId: string, roleFilter?: string): Promise<Employee[]> {
     try {
       let query = supabase
-        .from('employees')
+        .from(EMPLOYEE_TABLE)
         .select('*')
         .eq('tenant_id', tenantId)
         .order('created_at', { ascending: false });
@@ -61,7 +62,7 @@ export const employeeService = {
       }
 
       const { data, error } = await supabase
-        .from('employees')
+        .from(EMPLOYEE_TABLE)
         .insert(insertData)
         .select()
         .single();
@@ -102,7 +103,7 @@ export const employeeService = {
       }
 
       const { data, error } = await supabase
-        .from('employees')
+        .from(EMPLOYEE_TABLE)
         .update(updateData)
         .eq('id', employeeId)
         .select()
@@ -134,7 +135,7 @@ export const employeeService = {
   async deleteEmployee(employeeId: string): Promise<boolean> {
     try {
       const { error } = await supabase
-        .from('employees')
+        .from(EMPLOYEE_TABLE)
         .delete()
         .eq('id', employeeId);
 
@@ -183,7 +184,7 @@ export const employeeService = {
       const passwordHash = await bcrypt.hash(tempPassword, 10);
 
       const { error } = await supabase
-        .from('employees')
+        .from(EMPLOYEE_TABLE)
         .update({ password_hash: passwordHash })
         .eq('id', employeeId);
 
@@ -204,7 +205,7 @@ export const employeeService = {
       const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
 
       const { data, error } = await supabase
-        .from('employees')
+        .from(EMPLOYEE_TABLE)
         .update({ status: newStatus })
         .eq('id', employeeId)
         .select()

@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { comparePassword } from '../utils/passwordUtils';
+import { SUPER_ADMIN_TABLE, COMPANY_ADMIN_TABLE, EMPLOYEE_TABLE } from '../models';
 
 export interface LoginCredentials {
   username: string;
@@ -21,7 +22,7 @@ export const loginSuperAdmin = async (credentials: LoginCredentials): Promise<Au
   console.log('Attempting login with username:', username);
 
   const { data, error } = await supabase
-    .from('super_admins')
+    .from(SUPER_ADMIN_TABLE)
     .select('id, username, password_hash')
     .eq('username', username)
     .maybeSingle();
@@ -58,7 +59,7 @@ export const loginCompanyAdmin = async (credentials: LoginCredentials, tenantId:
   console.log('Attempting login with identifier:', username);
 
   const { data: adminData, error: adminError } = await supabase
-    .from('company_admins')
+    .from(COMPANY_ADMIN_TABLE)
     .select('id, employee_id, name, email, password_hash, tenant_id')
     .eq('employee_id', username)
     .maybeSingle();
@@ -89,7 +90,7 @@ export const loginCompanyAdmin = async (credentials: LoginCredentials, tenantId:
   }
 
   const { data: employeeData, error: employeeError } = await supabase
-    .from('employees')
+    .from(EMPLOYEE_TABLE)
     .select('id, name, emp_id, mobile, password_hash, role, tenant_id, status')
     .eq('emp_id', username)
     .maybeSingle();
