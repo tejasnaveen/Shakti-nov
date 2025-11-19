@@ -78,12 +78,34 @@ export const UploadCasesModal: React.FC<UploadCasesModalProps> = ({
   const handleProductSelect = async (product: string) => {
     setSelectedProduct(product);
     setSelectedTeam('');
-    
+
+    if (!user?.tenantId) {
+      console.error('Tenant ID not available');
+      showNotification(notificationHelpers.error(
+        'Error',
+        'Unable to load column configurations'
+      ));
+      return;
+    }
+
     try {
-      const configs = await columnConfigService.getActiveColumnConfigurations(user.id, product);
+      console.log('Loading column configs for tenant:', user.tenantId, 'product:', product);
+      const configs = await columnConfigService.getActiveColumnConfigurations(user.tenantId, product);
+      console.log('Loaded column configs:', configs.length);
       setColumnConfigs(configs);
+
+      if (configs.length === 0) {
+        showNotification(notificationHelpers.warning(
+          'No Configuration',
+          'No column configuration found for this product. Please contact your admin.'
+        ));
+      }
     } catch (error) {
       console.error('Error loading column configurations:', error);
+      showNotification(notificationHelpers.error(
+        'Error',
+        'Failed to load column configurations'
+      ));
     }
   };
 
@@ -92,11 +114,34 @@ export const UploadCasesModal: React.FC<UploadCasesModalProps> = ({
   };
 
   const handleDownloadTemplate = () => {
-    if (columnConfigs.length > 0) {
+    if (!selectedProduct) {
+      showNotification(notificationHelpers.error(
+        'Product Not Selected',
+        'Please select a product first'
+      ));
+      return;
+    }
+
+    if (columnConfigs.length === 0) {
+      showNotification(notificationHelpers.error(
+        'No Configuration',
+        'No column configuration found for this product. Please contact your admin to set up columns.'
+      ));
+      return;
+    }
+
+    try {
+      console.log('Generating template with', columnConfigs.length, 'columns');
       excelUtils.generateTemplate(columnConfigs);
       showNotification(notificationHelpers.success(
         'Template Downloaded',
         'Excel template has been downloaded successfully'
+      ));
+    } catch (error) {
+      console.error('Error generating template:', error);
+      showNotification(notificationHelpers.error(
+        'Download Failed',
+        'Failed to generate Excel template'
       ));
     }
   };
@@ -125,7 +170,7 @@ export const UploadCasesModal: React.FC<UploadCasesModalProps> = ({
   };
 
   const handleUploadCases = async () => {
-    if (!uploadedFile || !selectedTeam || !selectedProduct || !tenant?.id || !user?.id) {
+    if (!uploadedFile || !selectedTeam || !selectedProduct || !user?.tenantId || !user?.id) {
       showNotification(notificationHelpers.error(
         'Missing Data',
         'Please complete all required fields'
