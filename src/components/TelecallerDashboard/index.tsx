@@ -298,35 +298,58 @@ export const TelecallerDashboard: React.FC<TelecallerDashboardProps> = ({ user, 
 
             {activeSection === 'cases' && (
               <div className="space-y-6">
-                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">My Cases</h3>
-                  <CustomerCaseTable
-                    customerCases={customerCases}
-                    columnConfigs={[]}
-                    isLoading={isLoading}
-                    onViewDetails={(caseData) => {
-                      console.log('View case details:', caseData);
-                      showNotification(notificationHelpers.info(
-                        'Case Details',
-                        `Viewing case: ${caseData.loan_id || 'N/A'}`
-                      ));
-                    }}
-                    onCallCustomer={(caseData) => {
-                      console.log('Call customer:', caseData);
-                      showNotification(notificationHelpers.info(
-                        'Call Customer',
-                        `Calling: ${caseData.customer_name || 'N/A'}`
-                      ));
-                    }}
-                    onUpdateStatus={(caseData) => {
-                      console.log('Update status:', caseData);
-                      showNotification(notificationHelpers.success(
-                        'Status Updated',
-                        `Case ${caseData.loan_id || 'N/A'} status updated`
-                      ));
-                    }}
-                  />
-                </div>
+                <CustomerCaseTable
+                  customerCases={customerCases.map(c => ({
+                    ...c,
+                    customerName: c.customer_name,
+                    loanId: c.loan_id,
+                    mobileNo: c.mobile_no,
+                    outstandingAmount: c.outstanding_amount,
+                    emiAmount: c.emi_amount,
+                    lastPaidDate: c.last_paid_date,
+                    loanAmount: c.loan_amount,
+                    posAmount: c.pos_amount,
+                    pendingDues: c.pending_dues,
+                    paymentLink: c.payment_link,
+                    alternateNumber: c.alternate_number,
+                    sanctionDate: c.sanction_date,
+                    lastPaidAmount: c.last_paid_amount,
+                    branchName: c.branch_name,
+                    loanType: c.loan_type,
+                    caseStatus: c.case_status
+                  }))}
+                  columnConfigs={[
+                    { id: 1, columnName: 'customerName', displayName: 'Customer Name', isActive: true },
+                    { id: 2, columnName: 'loanId', displayName: 'Loan ID', isActive: true },
+                    { id: 3, columnName: 'mobileNo', displayName: 'Mobile', isActive: true },
+                    { id: 4, columnName: 'dpd', displayName: 'DPD', isActive: true },
+                    { id: 5, columnName: 'outstandingAmount', displayName: 'Outstanding', isActive: true },
+                    { id: 6, columnName: 'emiAmount', displayName: 'EMI Amount', isActive: true },
+                    { id: 7, columnName: 'lastPaidDate', displayName: 'Last Paid', isActive: true }
+                  ]}
+                  isLoading={isLoading}
+                  onViewDetails={(caseData) => {
+                    console.log('View case details:', caseData);
+                    showNotification(notificationHelpers.info(
+                      'Case Details',
+                      `Viewing case: ${caseData.loan_id || 'N/A'}`
+                    ));
+                  }}
+                  onCallCustomer={(caseData) => {
+                    console.log('Call customer:', caseData);
+                    showNotification(notificationHelpers.info(
+                      'Call Customer',
+                      `Calling: ${caseData.customer_name || 'N/A'}`
+                    ));
+                  }}
+                  onUpdateStatus={(caseData) => {
+                    console.log('Update status:', caseData);
+                    showNotification(notificationHelpers.success(
+                      'Status Updated',
+                      `Case ${caseData.loan_id || 'N/A'} status updated`
+                    ));
+                  }}
+                />
               </div>
             )}
 
